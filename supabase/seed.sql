@@ -1,0 +1,2 @@
+-- supabase/seed.sql
+-- Add your initial data here 

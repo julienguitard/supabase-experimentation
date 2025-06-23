@@ -1,0 +1,4 @@
+# supabase/config.toml
+
+[project]
+name = "supabase-rag-project" 

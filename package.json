@@ -1,0 +1,18 @@
+{
+  "name": "supabase-rag-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web",
+    "packages/types",
+    "scripts"
+  ],
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev": "pnpm dev:web",
+    "lint": "pnpm -r lint"
+  },
+  "dependencies": {
+    "supabase": "^2.26.9"
+  }
+}
