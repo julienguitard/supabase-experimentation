@@ -1,4 +1,2 @@
-# supabase/config.toml
-
-[project]
-name = "supabase-rag-project" 
+project = "julienguitard's Project"
+api_url = "hyykpiovnvtkoncgxmpg"

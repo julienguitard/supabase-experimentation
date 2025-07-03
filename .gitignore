@@ -1,4 +1,4 @@
-# .gitignore
+.gitignore
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 ## Dependency directories and package managers
@@ -22,6 +22,8 @@
 .env.*
 *.env
 *constants*
+/supabase/config.toml
+config.toml
 
 
 
