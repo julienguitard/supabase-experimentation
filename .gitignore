@@ -17,10 +17,13 @@
 ## Testing output
 /coverage
 
-## Environment variable files
+## Environment variable files or constants file
 .env
 .env.*
 *.env
+*constants*
+
+
 
 ## Debug logs
 npm-debug.log*

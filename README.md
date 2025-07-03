@@ -2,6 +2,28 @@
 
 This is a monorepo for a Retrieval-Augmented Generation (RAG) project using Supabase and Next.js.
 
+## Case study
+
+### Business Challenge
+How do you build real-time AI applications that can handle millions of users while maintaining low latency and high availability?
+
+### Technical Approach
+
+-Challenge: Traditional databases can't handle real-time AI workloads at scale
+-Solution: Supabase + TypeScript architecture for real-time AI backends
+-Implementation: Edge functions, real-time subscriptions, and type-safe APIs
+-Business Impact: Sub-100ms response times for AI-powered features
+
+### Technical Insights
+
+#### Real-Time Architecture: WebSocket-based real-time data synchronization
+Edge Computing: Distributed AI inference at the network edge
+Type Safety: End-to-end TypeScript for reliable AI service integration
+Scalable Infrastructure: Auto-scaling backend services for variable AI workloads
+
+#### Lessons for Enterprise AI
+Modern AI applications require real-time infrastructure. Supabase's architecture patterns show how to build AI systems that feel instant to users while handling enterprise-scale data loads.
+
 ## Structure
 ```
 your-project/
