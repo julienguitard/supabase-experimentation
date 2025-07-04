@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { Option } from '@types';
-import { generateClient,generateUser,getRequestParams, dbRequest, generateSuccessResponse, errorHandler, dbResponseHandler } from "../../utils/handlers.ts";
+import { generateClient,generateUser,getRequestParams, dbRequest, generateSuccessResponse, errorHandler } from "../../utils/handlers.ts";
 
 
 const supabaseClient = generateClient();
@@ -13,5 +13,12 @@ Deno.serve((req:Request)=>{
   const tableValue: Option<string>  = url.searchParams.get('table');
   const dbResponse:any = dbRequest(supabaseClient,tableValue,null); 
 
-  return dbResponseHandler(user,dbResponse);
+  return dbResponse.then(({ data: links, error }: { data: unknown; error: unknown })=>{
+    if (error) {
+      return errorHandler('Failed to fetch table rows:', error, 500);
+    }
+    return generateSuccessResponse(user, links);
+  }).catch((err)=>{
+    return errorHandler('Internal server error', err, 500);
+  });
 });

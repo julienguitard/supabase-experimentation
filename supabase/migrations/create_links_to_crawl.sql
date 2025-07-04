@@ -19,6 +19,9 @@ from
           url_id as id
         from
           curl_logs
+          where status = 200 
+          and content is not null 
+          and TIMESTAMP_DIFF(created_at, crawled_at, DAY) > 30
       ) c using (id)
   )
 where

@@ -11,7 +11,8 @@ Deno.serve((req:Request)=>{
   const authHeader: Option<string> = requestParams.authHeader;
   const user: Option<{ email: string }>  = generateUser();
   const tableValue: Option<string>  = url.searchParams.get('table');
-  const dbResponse:any = dbRequest(supabaseClient,tableValue,null); 
+  const idValue: Option<string>  = url.searchParams.get('id');
+  const dbResponse:any = dbRequest(supabaseClient,tableValue,idValue); 
 
   return dbResponseHandler(user,dbResponse);
 });
