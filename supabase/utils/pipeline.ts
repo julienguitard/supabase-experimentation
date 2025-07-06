@@ -5,7 +5,22 @@ export function parseRequest(req:Request):RequestDTO{
     const method = req.method;
     const headers = req.headers;
     const body = req.body;
-    const urlSearchParams = url.searchParams;
+
+    let table:Option<string> = null;
+    let id:Option<string> = null;
+    try {
+        table = url.searchParams.get('table');
+    }
+    catch (error) {
+        console.error(error);
+    }
+    try {
+        id = url.searchParams.get('id');
+    }
+    catch (error) {
+        console.error(error);
+    }
+    const urlSearchParams = {table, id};
     const authHeader = headers.get('Authorization');
     return {method, urlSearchParams, authHeader};
 }
@@ -25,16 +40,16 @@ export function compileToDBQuery(client:Client,queryDTO:DBQueryDTO):DBQuery<Clie
     const {table, id} = queryDTO;
     if (id) {
         // Thunk approach because of the way supabase works otherwise a SQL string would fit better
-        return ()=>client.from(table).select('*').eq('id', id);   
+        return {client, query:()=>client.from(table).select('*').eq('id', id)};   
     }
     else {
         // Thunk approach because of the way supabase works otherwise a SQL string would fit better
-        return ()=>client.from(table).select('*');
+        return {client, query:()=>client.from(table).select('*')};
     }
 }
 
-export async function executeDBQuery(query:DBQuery<Client,T>):DBResponseDTO<T>{
-    const {data, error} = await query.query();
+export async function executeDBQuery(DBquery:DBQuery<Client,T>):DBResponseDTO<T>{
+    const {data, error} = await DBquery.query();
     return {data, error};
 }
 
