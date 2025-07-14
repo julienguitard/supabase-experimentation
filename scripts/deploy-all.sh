@@ -37,7 +37,3 @@ if [ -z "$FUNCTIONS" ]; then
     echo "No functions found in $FUNCTIONS_DIR"
     exit 1
 fi
-
-
-
-x

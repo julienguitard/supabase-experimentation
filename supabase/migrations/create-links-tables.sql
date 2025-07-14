@@ -6,3 +6,30 @@ create table public.links (
   constraint links_pkey primary key (id), -- Primary key constraint on id
   constraint links_url_key unique (url) -- Ensures each URL is unique
 ) TABLESPACE pg_default; -- Use the default tablespace
+
+create table tmp_links_insert as (
+  select
+    *
+  from
+    links
+  where
+    false
+);
+
+create table tmp_links_update as (
+  select
+    *
+  from
+    links
+  where
+    false
+);
+
+create table tmp_links_delete as (
+  select
+    *
+  from
+    links
+  where
+    false
+);
