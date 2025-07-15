@@ -33,9 +33,9 @@ export function edgeFunctionToSQLFunction(edgeFunction:string):Option<string>{
         case 'insert-links':
             return 'insert_into_links';
         case 'update-links':
-            return 'update_links';
+            return 'update_into_links';
         case 'delete-links':
-            return 'delete_from_links';
+            return 'delete_into_links';
         default:    
             return null;
     }

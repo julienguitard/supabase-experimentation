@@ -2,11 +2,17 @@ import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable } from "./transformations/translate-to-dbquerydto-transformation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/compile-to-dbquery-transformation.ts";
 
-export function parseRequest(req:Request):RequestDTO{
+export async function parseRequest(req:Request):RequestDTO{
     const url = new URL(req.url);
     const method = req.method;
     const headers = req.headers;
-    const body = req.body;
+    let body = null;
+    if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
+        body = await req.json();
+    }
+    else {
+        body = null;
+    }
 
     let table:Option<string> = null;
     let id:Option<string> = null;
@@ -47,45 +53,45 @@ export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string):DB
             const {table, id} = urlSearchParams;
             const cacheTable = edgeFunctionToCacheTable(edgeFunction);
             const SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
-            const body = reqDTO.body;
+            const rows = reqDTO.body;
             if (id) {
                 throw new Error('Inserting with an id is not allowed');
             }
             else if (table) {
-                return {statement,table, body, cacheTable, SQLFunction};
+                return {statement,table, rows, cacheTable, SQLFunction};
             }
             else {
-                return {statement, body, cacheTable, SQLFunction};
+                return {statement, rows, cacheTable, SQLFunction};
             }
         }
         case 'update' : {
             const {table, id} = urlSearchParams;
             const cacheTable = edgeFunctionToCacheTable(edgeFunction);
             const SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
-            const body = reqDTO.body;
+            const rows = reqDTO.body;
             if (id) {
                 throw new Error('Inserting with an id is not allowed');
             }
             else if (table) {
-                return {statement,table, body, cacheTable, SQLFunction};
+                return {statement,table, rows, cacheTable, SQLFunction};
             }
             else {
-                return {statement, body, cacheTable, SQLFunction};
+                return {statement, rows, cacheTable, SQLFunction};
             }
         }
         case 'delete' : {
             const {table, id} = urlSearchParams;
             const cacheTable = edgeFunctionToCacheTable(edgeFunction);
             const SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
-            const body = reqDTO.body;
+            const rows = reqDTO.body;
             if (id) {
                 throw new Error('Inserting with an id is not allowed');
             }
             else if (table) {
-                return {statement,table, body, cacheTable, SQLFunction};
+                return {statement,table, rows, cacheTable, SQLFunction};
             }
             else {
-                return {statement, body, cacheTable, SQLFunction};
+                return {statement, rows, cacheTable, SQLFunction};
             }
         }
         default: {

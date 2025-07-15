@@ -1,6 +1,9 @@
 -- First, fix your existing functions (correct the DELETE statements)
 
-CREATE OR REPLACE FUNCTION insert_into_links() RETURNS SETOF links AS $$
+CREATE OR REPLACE FUNCTION insert_into_links() RETURNS SETOF links 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation
     RETURN QUERY
@@ -17,9 +20,14 @@ BEGIN
     -- Clean up the tmp table
     DELETE FROM tmp_links_insert WHERE TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$ ;
 
-CREATE OR REPLACE FUNCTION update_into_links() RETURNS SETOF links AS $$
+GRANT EXECUTE ON FUNCTION public.insert_into_links() TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION update_into_links() RETURNS SETOF links
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation
     RETURN QUERY
@@ -33,12 +41,18 @@ BEGIN
     )
     SELECT * FROM merged;
     
+
     -- Clean up the tmp table
     DELETE FROM tmp_links_update WHERE TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-CREATE OR REPLACE FUNCTION delete_into_links() RETURNS SETOF links AS $$
+GRANT EXECUTE ON FUNCTION public.update_into_links() TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION delete_into_links() RETURNS SETOF links
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation and capture deleted rows
     RETURN QUERY
@@ -55,4 +69,6 @@ BEGIN
     -- Clean up the tmp table
     DELETE FROM tmp_links_delete WHERE TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.delete_into_links() TO anon, authenticated;

@@ -10,7 +10,7 @@ const edgeFunction: string = 'insert-links';
 Deno.serve(async (req:Request)=>{
   // Step 1: Parse the incoming request
   console.log(`[${Date.now()}] Step 1: Parsing incoming request...`);
-  const parsedRequest = parseRequest(req);
+  const parsedRequest = await parseRequest(req);
   console.log(`[${Date.now()}] Step 1 complete: Parsed request:`, parsedRequest);
   
   // Step 2: Translate the parsed request to database query DTO

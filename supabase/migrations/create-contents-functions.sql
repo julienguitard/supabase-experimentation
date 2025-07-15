@@ -1,5 +1,8 @@
 CREATE OR REPLACE FUNCTION insert_http_into_contents() 
-RETURNS SETOF links AS $$
+RETURNS SETOF contents 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation to insert HTTP responses into contents table
     RETURN QUERY
@@ -35,9 +38,12 @@ BEGIN
     )
     SELECT * FROM inserted;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-CREATE OR REPLACE FUNCTION insert_into_contents() RETURNS SETOF contents AS $$
+CREATE OR REPLACE FUNCTION insert_into_contents() RETURNS SETOF contents
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation
     RETURN QUERY
@@ -54,10 +60,13 @@ BEGIN
     -- Clean up the tmp table
     DELETE FROM tmp_contents_insert WHERE TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 
-CREATE OR REPLACE FUNCTION update_into_contents() RETURNS SETOF contents AS $$
+CREATE OR REPLACE FUNCTION update_into_contents() RETURNS SETOF contents 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation
     RETURN QUERY
@@ -74,9 +83,12 @@ BEGIN
     -- Clean up the tmp table
     DELETE FROM tmp_contents_update WHERE TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-CREATE OR REPLACE FUNCTION delete_into_contents() RETURNS SETOF contents AS $$
+CREATE OR REPLACE FUNCTION delete_into_contents() RETURNS SETOF contents
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     -- Perform the merge operation and capture deleted rows
     RETURN QUERY
@@ -93,4 +105,4 @@ BEGIN
     -- Clean up the tmp table
     DELETE FROM tmp_contents_delete WHERE TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$;
