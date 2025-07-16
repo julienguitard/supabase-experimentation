@@ -8,6 +8,10 @@ const supabaseClient: SupabaseClient = createSupabaseClient();
 const edgeFunction: string = 'fetch-links';
 
 Deno.serve(async (req:Request)=>{
+  const foo = 'cool';
+  const textEncoder = new TextEncoder();
+  const encodedFoo = textEncoder.encode(foo);
+  console.log(`[${Date.now()}] encodedFoo:`,encodedFoo);
   // Step 1: Parse the incoming request
   console.log(`[${Date.now()}] Step 1: Parsing incoming request...`);
   const parsedRequest = await parseRequest(req);

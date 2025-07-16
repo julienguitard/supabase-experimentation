@@ -7,6 +7,7 @@ const supabaseClient: SupabaseClient = createSupabaseClient();
 const edgeFunction: string = 'check-row';
 
 Deno.serve(async (req:Request)=>{
+
   // Step 1: Parse the incoming request
   console.log(`[${Date.now()}] Step 1: Parsing incoming request...`);
   const parsedRequest = await parseRequest(req);

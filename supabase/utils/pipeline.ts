@@ -1,6 +1,8 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO } from "@types";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO } from "@types";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable } from "./transformations/translate-to-dbquerydto-transformation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/compile-to-dbquery-transformation.ts";
+import { executeSingeBrowsing } from "./transformations/execute-browsing.ts";
+import type { Browser } from "https://deno.land/x/puppeteer@16.2.0/src/deno/Puppeteer.ts";
 
 export async function parseRequest(req:Request):RequestDTO{
     const url = new URL(req.url);
@@ -137,6 +139,29 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
     catch (error) {
         throw new Error('Error executing DB query');
     }
+}
+
+export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO[]{
+    const {data, error} = dbResponseDTO;
+    if (error) {
+        throw new Error('Error formatting to crawlable DTO');
+    }
+    else {
+        return data.map((d)=>({url:d.url, headers:null}))
+    }
+}
+
+export async function executeBrowsing(browser:Browser,crawlableDTOs:CrawlableDTO[]):Promise<DBResponseDTO<T>>{
+    try {
+        const dbResponseDTOs = await Promise.all(crawlableDTOs.map(async (crawlableDTO)=>executeSingeBrowsing(browser,crawlableDTO.url)));
+        const data = dbResponseDTOs.map((dbResponseDTO)=>dbResponseDTO.data);
+        const error = dbResponseDTOs.map((dbResponseDTO)=>dbResponseDTO.error);
+        return {data, error};
+    }
+    catch (executeBrowsingError) {
+        throw new Error('Error executing browser query:',executeBrowsingError.message);
+    }
+
 }
 
 export function formatToResponseDTO(res:DBResponseDTO<T>):ResponseDTO{

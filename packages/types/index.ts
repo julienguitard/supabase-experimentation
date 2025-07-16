@@ -12,7 +12,6 @@ export type BrowserlessClient = {
     headers: Record<string, string>;
 }
 
-
 // Shared TypeScript types will go here 
 export type User = {
     email: string;
@@ -32,6 +31,7 @@ export type RequestDTO = {
 
 export type CrawlableDTO = {
     url: string;
+    headers: Record<string, string>;
 };
 
 export type CrawledDTO = {
