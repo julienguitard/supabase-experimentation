@@ -1,4 +1,5 @@
-import type { Option } from "../../../packages/types";
+import type { ContentsRowDTO, Option, SingleCrawledDTO } from "@types";
+import { createTextEncoder } from "../context.ts";
 
 export function edgeFunctionToStatement(edgeFunction:string):string{
     if (edgeFunction.includes('insert')){
@@ -47,6 +48,10 @@ export function edgeFunctionToSQLFunction(edgeFunction:string):Option<string>{
         default:    
             return null;
     }
+}
+
+export function translateSingleCrawledDTOToContentsRowDTO(textEncoder:TextEncoder,crawledDTO:SingleCrawledDTO):ContentsRowDTO{
+    return {link_id:crawledDTO.linkId, status:crawledDTO.status, content:textEncoder.encode(crawledDTO.content)};
 }
 
 /*function translateToDBQueryDTO(edgeFunction:string,reqDTO:RequestDTO):DBQueryDTO{

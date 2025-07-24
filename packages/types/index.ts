@@ -2,6 +2,8 @@ import type { PostgresError } from "jsr:@supabase/supabase-js@2";
 
 export type Option<T> = T | null;
 
+export type OneOrMany<T> = T | T[];
+
 export type Env = {
     get(key: string): Option<string>;
     // ...other methods like set, delete, toObject, etc.
@@ -29,15 +31,31 @@ export type RequestDTO = {
     body?: unknown;
 }
 
-export type CrawlableDTO = {
+export type SingleCrawlableDTO = {
+    linkId: string;
     url: string;
     headers: Record<string, string>;
-};
+}
 
-export type CrawledDTO = {
+export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;
+
+
+
+export type SingleBrowsingResponseDTO = {
     content: string;
+    status: number;
     error: number;
-};
+}
+
+export type SingleCrawledDTO = SingleBrowsingResponseDTO & {linkId:string};
+
+export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
+
+export type ContentsRowDTO = {
+    link_id: string;
+    status: number;
+    content: Uint8Array;
+}
 
 export type LLMRequestDTO = {
     model: string;

@@ -1,7 +1,8 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO } from "@types";
-import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable } from "./transformations/translate-to-dbquerydto-transformation.ts";
-import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/compile-to-dbquery-transformation.ts";
-import { executeSingeBrowsing } from "./transformations/execute-browsing.ts";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO} from "@types";
+import { isSingleCrawlableDTO, isSingleCrawledDTO } from "../../packages/types/guards.ts";
+import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/translate-to-dbquerydto-transformation.ts";
+import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
+import { executeSingleBrowsing } from "./transformations/single-browsing-execution.ts";
 import type { Browser } from "https://deno.land/x/puppeteer@16.2.0/src/deno/Puppeteer.ts";
 
 export async function parseRequest(req:Request):RequestDTO{
@@ -143,25 +144,38 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
     }
 }
 
-export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO[]{
+export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to crawlable DTO');
     }
     else {
-        return data.map((d)=>({url:d.url, headers:null}))
+        return data.map((d)=>({linkId: d.id, url:d.url, headers:null}))
     }
-}
+}   
 
-export async function executeBrowsing(browser:Browser,crawlableDTOs:CrawlableDTO[]):Promise<DBResponseDTO<T>>{
+export async function executeBrowsing(browser:Browser,crawlableDTOs:CrawlableDTO):Promise<CrawledDTO<T,E>>{
     try {
-        const dbResponseDTOs = await Promise.all(crawlableDTOs.map(async (crawlableDTO)=>executeSingeBrowsing(browser,crawlableDTO.url)));
-        const data = dbResponseDTOs.map((dbResponseDTO)=>dbResponseDTO.data);
-        const error = dbResponseDTOs.map((dbResponseDTO)=>dbResponseDTO.error);
-        return {data, error};
+        if (!isSingleCrawlableDTO(crawlableDTOs)) {
+            const crawledDTO = await Promise.all(crawlableDTOs.map(async (singleCrawlableDTO)=>executeSingleBrowsing(browser,singleCrawlableDTO.url)));
+            return crawledDTO;
+        }
+        else {
+            const crawledDTO = await executeSingleBrowsing(browser,crawlableDTOs.url);
+            return crawledDTO;
+        }
     }
     catch (executeBrowsingError) {
         throw new Error('Error executing browser query:',executeBrowsingError.message);
+    }
+}
+
+export function translateCrawledDTOToDBQueryDTO(textEncoder:TextEncoder,crawledDTO:CrawledDTO):DBQueryDTO{
+    if (!isSingleCrawledDTO(crawledDTO)) {
+        return {statement: 'insert',  rows: crawledDTO.map((crawledDTO)=>translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO)), cacheTable: 'tmp_contents_insert', SQLFunction: 'insert_into_contents'};
+    }
+    else {
+        return {statement: 'insert',  rows: [translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO)], cacheTable: 'tmp_contents_insert', SQLFunction: 'insert_into_contents'};
     }
 
 }
