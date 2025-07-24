@@ -134,6 +134,8 @@ export function compileToDBQuery(client:Client,DBqueryDTO:DBQueryDTO):DBQuery<Cl
 export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>{
     try {
         const {data, error} = await dbQuery.query();
+        console.log('data', data);
+        console.log('error', error);
         return {data, error};
     }
     catch (error) {

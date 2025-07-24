@@ -19,14 +19,15 @@ export async function executeSelectQuery(client:Client, table:string, id?:string
 
 export async function executeInsertInCacheTableQuery(client:Client, cacheTable:string, rows:T, sqlFunction:string):Promise<DBResponseDTO<T>>{
     try {
-        const {insertData, insertError} = await client.from(cacheTable).insert(rows);
+        const {data : insertData, error : insertError} = await client.from(cacheTable).insert(rows);
         if (insertError) {
             throw new Error('Error inserting into cache table:',insertError.message);
         }
         else {
-            console.log(`[${Date.now()}] sqlFunction:`,sqlFunction);
             try {
-                const {rpcData, rpcError}=await client.rpc(sqlFunction);
+                const {data : rpcData, error : rpcError}=await client.rpc(sqlFunction);
+                console.log('rpcData', rpcData);
+                console.log('rpcError', rpcError);
                 if (rpcError) {
                   throw new Error('Error in executing SQL function:',rpcError.message);
                 }   

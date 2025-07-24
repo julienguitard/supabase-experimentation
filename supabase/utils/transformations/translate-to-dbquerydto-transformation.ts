@@ -23,6 +23,10 @@ export function edgeFunctionToCacheTable(edgeFunction:string):Option<string>{
             return 'tmp_links_update';
         case 'delete-links':
             return 'tmp_links_delete';
+        case 'insert-contents':
+            return 'tmp_contents_insert';
+        case 'insert-summaries':
+            return 'tmp_summaries_insert';
         default:
             return null;
     }
@@ -36,6 +40,10 @@ export function edgeFunctionToSQLFunction(edgeFunction:string):Option<string>{
             return 'update_into_links';
         case 'delete-links':
             return 'delete_into_links';
+        case 'insert-contents':
+            return 'tmp_contents_insert';
+        case 'insert-summaries':
+            return 'tmp_summaries_insert';
         default:    
             return null;
     }
