@@ -40,7 +40,6 @@ export type SingleCrawlableDTO = {
 export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;
 
 
-
 export type SingleBrowsingResponseDTO = {
     content: string;
     status: number;

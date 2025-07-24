@@ -1,9 +1,9 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO} from "@types";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO} from "@types";
 import { isSingleCrawlableDTO, isSingleCrawledDTO } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/translate-to-dbquerydto-transformation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
 import { executeSingleBrowsing } from "./transformations/single-browsing-execution.ts";
-import type { Browser } from "https://deno.land/x/puppeteer@16.2.0/src/deno/Puppeteer.ts";
+import type { Browser } from "npm:puppeteer-core"
 
 export async function parseRequest(req:Request):RequestDTO{
     const url = new URL(req.url);
@@ -36,9 +36,15 @@ export async function parseRequest(req:Request):RequestDTO{
     return {method, urlSearchParams, authHeader, body};
 }
 
-export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string):DBQueryDTO{
+export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string):DBQueryDTO{
     const {method, urlSearchParams, authHeader} = reqDTO;
-    const statement = edgeFunctionToStatement(edgeFunction);
+    let statement:string;
+    if (step){
+        statement = edgeFunctionToStatement(edgeFunction,step);
+    }
+    else {
+        statement = edgeFunctionToStatement(edgeFunction);
+    }
     switch (statement){
         case  'select' : {
             const {table, id} = urlSearchParams;
@@ -54,8 +60,16 @@ export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string):DB
         }
         case 'insert' : {
             const {table, id} = urlSearchParams;
-            const cacheTable = edgeFunctionToCacheTable(edgeFunction);
-            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
+            let cacheTable:Option<string>;
+            let SQLFunction:Option<string>;
+            if (step){
+                cacheTable = edgeFunctionToCacheTable(edgeFunction,step);
+                SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+            }
+            else {
+                cacheTable = edgeFunctionToCacheTable(edgeFunction);
+                SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
+            }
             const rows = reqDTO.body;
             if (id) {
                 throw new Error('Inserting with an id is not allowed');
@@ -135,8 +149,6 @@ export function compileToDBQuery(client:Client,DBqueryDTO:DBQueryDTO):DBQuery<Cl
 export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>{
     try {
         const {data, error} = await dbQuery.query();
-        console.log('data', data);
-        console.log('error', error);
         return {data, error};
     }
     catch (error) {
@@ -150,18 +162,18 @@ export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDT
         throw new Error('Error formatting to crawlable DTO');
     }
     else {
-        return data.map((d)=>({linkId: d.id, url:d.url, headers:null}))
+        return data.map((d)=>({linkId: d.id, url:d.url, headers:{}}))
     }
 }   
 
-export async function executeBrowsing(browser:Browser,crawlableDTOs:CrawlableDTO):Promise<CrawledDTO<T,E>>{
+export async function executeBrowsing(browser:Browser,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
     try {
-        if (!isSingleCrawlableDTO(crawlableDTOs)) {
-            const crawledDTO = await Promise.all(crawlableDTOs.map(async (singleCrawlableDTO)=>executeSingleBrowsing(browser,singleCrawlableDTO.url)));
+        if (!isSingleCrawlableDTO(crawlableDTO)) {
+            const crawledDTO = await Promise.all(crawlableDTO.map(async (singleCrawlableDTO)=>executeSingleBrowsing(browser,singleCrawlableDTO)));
             return crawledDTO;
         }
         else {
-            const crawledDTO = await executeSingleBrowsing(browser,crawlableDTOs.url);
+            const crawledDTO = await executeSingleBrowsing(browser,crawlableDTO);
             return crawledDTO;
         }
     }
@@ -170,14 +182,20 @@ export async function executeBrowsing(browser:Browser,crawlableDTOs:CrawlableDTO
     }
 }
 
-export function translateCrawledDTOToDBQueryDTO(textEncoder:TextEncoder,crawledDTO:CrawledDTO):DBQueryDTO{
+export function translateCrawledDTOToRequestDTO(textEncoder:TextEncoder,crawledDTO:CrawledDTO):RequestDTO{
+    console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, crawledDTO);
+    let rows:ContentsRowDTO[];
     if (!isSingleCrawledDTO(crawledDTO)) {
-        return {statement: 'insert',  rows: crawledDTO.map((crawledDTO)=>translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO)), cacheTable: 'tmp_contents_insert', SQLFunction: 'insert_into_contents'};
+        rows = crawledDTO.map((crawledDTO)=>translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO))
+        console.log(`[${Date.now()}] rows:`, rows);
     }
     else {
-        return {statement: 'insert',  rows: [translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO)], cacheTable: 'tmp_contents_insert', SQLFunction: 'insert_into_contents'};
+       console.log(`[${Date.now()}] crawledDTO:`, 'is single crawled DTO');
+       rows = [translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO)]
+       console.log(`[${Date.now()}] rows:`, rows);
     }
-
+    console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, 'returning request DTO');
+    return {method: 'POST', urlSearchParams: {}, authHeader: null, body: rows};
 }
 
 export function formatToResponseDTO(res:DBResponseDTO<T>):ResponseDTO{

@@ -52,7 +52,7 @@ BEGIN
         USING tmp_contents_insert s
         ON t.link_id = s.link_id AND t.created_at = s.created_at
         WHEN MATCHED THEN DO NOTHING
-        WHEN NOT MATCHED BY TARGET THEN INSERT VALUES (gen_random_uuid(), NOW(), s.link_id, s.status, s.status, s.content::bytea)
+        WHEN NOT MATCHED BY TARGET THEN INSERT VALUES (gen_random_uuid(), NOW(), s.link_id, s.status, s.content::bytea)
         RETURNING t.*
     )
     SELECT * FROM merged;

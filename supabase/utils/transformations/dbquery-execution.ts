@@ -26,13 +26,10 @@ export async function executeInsertInCacheTableQuery(client:Client, cacheTable:s
         else {
             try {
                 const {data : rpcData, error : rpcError}=await client.rpc(sqlFunction);
-                console.log('rpcData', rpcData);
-                console.log('rpcError', rpcError);
                 if (rpcError) {
                   throw new Error('Error in executing SQL function:',rpcError.message);
                 }   
                 else {
-                    console.log(`[${Date.now()}] {data:rpcData, error:rpcError}:`,{data:rpcData, error:rpcError});
                     return {data:rpcData, error:rpcError};
                 }
             }

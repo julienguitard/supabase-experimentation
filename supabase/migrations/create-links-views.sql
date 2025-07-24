@@ -25,4 +25,6 @@ FROM (
         ) c USING (id)
 ) AS uncrawled_links
 WHERE
-    crawled = 0);
+    crawled = 0
+ORDER BY RANDOM()
+LIMIT 5);
