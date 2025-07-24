@@ -18,20 +18,3 @@ create table tmp_contents_insert as (
     false
 );
 
-create table tmp_contents_update as (
-  select
-    id, created_at, link_id, status, content::bytea as content
-  from
-    contents
-  where
-    false
-);
-
-create table tmp_contents_delete as (
-  select
-    id, created_at, link_id, status, content::bytea as content
-  from
-    contents
-  where
-    false
-);
