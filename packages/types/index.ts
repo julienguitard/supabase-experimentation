@@ -1,4 +1,5 @@
 import type { PostgresError } from "jsr:@supabase/supabase-js@2";
+import type { Browser } from "npm:puppeteer-core";
 
 export type Option<T> = T | null;
 
@@ -6,7 +7,7 @@ export type OneOrMany<T> = T | T[];
 
 export type Env = {
     get(key: string): Option<string>;
-    // ...other methods like set, delete, toObject, etc.
+    // ...other methods like set, delete, toObjec;t, etc.
   }
 
 export type BrowserlessClient = {
@@ -14,6 +15,12 @@ export type BrowserlessClient = {
     headers: Record<string, string>;
 }
 
+export type BrowserFactory = {
+    browser: () => Promise<Browser>;
+}
+export type HexEncoder = {
+    encode: (input: string) => string;
+}
 // Shared TypeScript types will go here 
 export type User = {
     email: string;

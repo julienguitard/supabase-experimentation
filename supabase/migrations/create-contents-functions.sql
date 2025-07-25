@@ -1,4 +1,7 @@
-CREATE OR REPLACE FUNCTION insert_http_into_contents() 
+drop function if exists insert_http_into_contents;
+
+
+CREATE FUNCTION insert_http_into_contents() 
 RETURNS SETOF contents 
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -40,7 +43,9 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION insert_into_contents() RETURNS SETOF contents
+drop function if exists insert_into_contents;
+
+CREATE  FUNCTION insert_into_contents() RETURNS SETOF contents
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
@@ -52,7 +57,8 @@ BEGIN
         USING tmp_contents_insert s
         ON t.link_id = s.link_id AND t.created_at = s.created_at
         WHEN MATCHED THEN DO NOTHING
-        WHEN NOT MATCHED BY TARGET THEN INSERT VALUES (gen_random_uuid(), NOW(), s.link_id, s.status, s.content::bytea)
+        WHEN NOT MATCHED BY TARGET THEN INSERT VALUES 
+        (gen_random_uuid(), NOW(), s.link_id, s.status, decode(s.hex_content, 'hex'))
         RETURNING t.*
     )
     SELECT * FROM merged;

@@ -1,9 +1,9 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO} from "@types";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, HexEncoder, Browser, BrowserFactory} from "@types";
 import { isSingleCrawlableDTO, isSingleCrawledDTO } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/translate-to-dbquerydto-transformation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
 import { executeSingleBrowsing } from "./transformations/single-browsing-execution.ts";
-import type { Browser } from "npm:puppeteer-core"
+
 
 export async function parseRequest(req:Request):RequestDTO{
     const url = new URL(req.url);
@@ -166,14 +166,14 @@ export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDT
     }
 }   
 
-export async function executeBrowsing(browser:Browser,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
+export async function executeBrowsing(browserFactory:BrowserFactory,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
     try {
         if (!isSingleCrawlableDTO(crawlableDTO)) {
-            const crawledDTO = await Promise.all(crawlableDTO.map(async (singleCrawlableDTO)=>executeSingleBrowsing(browser,singleCrawlableDTO)));
+            const crawledDTO = await Promise.all(crawlableDTO.map(async (singleCrawlableDTO)=>executeSingleBrowsing(browserFactory.browser(),singleCrawlableDTO)));
             return crawledDTO;
         }
         else {
-            const crawledDTO = await executeSingleBrowsing(browser,crawlableDTO);
+            const crawledDTO = await executeSingleBrowsing(browserFactory.browser(),crawlableDTO);
             return crawledDTO;
         }
     }
@@ -182,16 +182,16 @@ export async function executeBrowsing(browser:Browser,crawlableDTO:CrawlableDTO)
     }
 }
 
-export function translateCrawledDTOToRequestDTO(textEncoder:TextEncoder,crawledDTO:CrawledDTO):RequestDTO{
+export function translateCrawledDTOToRequestDTO(hexEncoder:HexEncoder,crawledDTO:CrawledDTO):RequestDTO{
     console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, crawledDTO);
     let rows:ContentsRowDTO[];
     if (!isSingleCrawledDTO(crawledDTO)) {
-        rows = crawledDTO.map((crawledDTO)=>translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO))
+        rows = crawledDTO.map((crawledDTO)=>translateSingleCrawledDTOToContentsRowDTO(hexEncoder,crawledDTO))
         console.log(`[${Date.now()}] rows:`, rows);
     }
     else {
        console.log(`[${Date.now()}] crawledDTO:`, 'is single crawled DTO');
-       rows = [translateSingleCrawledDTOToContentsRowDTO(textEncoder,crawledDTO)]
+       rows = [translateSingleCrawledDTOToContentsRowDTO(hexEncoder,crawledDTO)]
        console.log(`[${Date.now()}] rows:`, rows);
     }
     console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, 'returning request DTO');

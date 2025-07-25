@@ -1,12 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { Option, Browser, SupabaseClient } from '@types';
-import { createBrowser, createSupabaseClient, createUser } from "../../utils/context.ts";
+import { createBrowserFactory, createHexEncoder, createSupabaseClient, createUser } from "../../utils/context.ts";
 import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateToDBQueryDTO, formatToCrawlableDTO, executeBrowsing, translateCrawledDTOToDBQueryDTO, translateCrawledDTOToRequestDTO } from "../../utils/pipeline.ts";
 
 
 const supabaseClient: SupabaseClient = createSupabaseClient();
-const browser: Browser = await createBrowser();
+const browserFactory: BrowserFactory = createBrowserFactory();
 const textEncoder = new TextEncoder();
+const hexEncoder = createHexEncoder(textEncoder);
 const edgeFunction: string = 'fetch-links';
 
 Deno.serve(async (req:Request)=>{
@@ -38,12 +39,12 @@ Deno.serve(async (req:Request)=>{
 
  // Step 06: Execute the browsing
   console.log(`[${Date.now()}] Step 6: Executing browsing...`);
-  const crawledDTO = await executeBrowsing(browser,crawlableDTO);
+  const crawledDTO = await executeBrowsing(browserFactory,crawlableDTO);
   console.log(`[${Date.now()}] Step 6 complete: Crawled DTO:`, crawledDTO);
 
 // Step 07: Translate the crawled DTO to request DTO
   console.log(`[${Date.now()}] Step 7: Translating crawled DTO to request DTO...`);
-  const requestDTO2 = translateCrawledDTOToRequestDTO(textEncoder,crawledDTO);
+  const requestDTO2 = translateCrawledDTOToRequestDTO(hexEncoder,crawledDTO);
   console.log(`[${Date.now()}] Step 7 complete: Request DTO:`, requestDTO2);
 
 // Step 08: Translate the request DTO to database query DTO

@@ -1,4 +1,4 @@
-import type { Option, Env, BrowserlessClient, User } from "@types";
+import type { Option, Env, BrowserlessClient, User, HexEncoder, Browser, BrowserFactory } from "@types";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import Anthropic from 'npm:@anthropic-ai/sdk';
@@ -33,23 +33,24 @@ export function createBrowserlessClient(ctx:Env=Deno.env):BrowserlessClient{
     return browserlessClient;
 }
 
-export async function createBrowser(ctx:Env=Deno.env):Promise<Browser>{
+export function createBrowserFactory(ctx:Env=Deno.env):BrowserFactory{
 // supabase/functions/lib/browser.ts
-  try {
-    const browserlessClient = createBrowserlessClient(ctx);
-    //const puppeteer = new PuppeteerDeno({
-    //  productName: "chrome",
-    //});
-    console.log(`[${Date.now()}] browserlessClient:`, browserlessClient);
-    const browser = await puppeteer.connect({
-    browserWSEndpoint: browserlessClient.url,
-  })
-  console.log(`[${Date.now()}] browser:`, browser);
-  return browser;
+  async function browser():Promise<Browser>{
+    try {
+      const browserlessClient = createBrowserlessClient(ctx);
+      console.log(`[${Date.now()}] browserlessClient:`, browserlessClient);
+      const browser = await puppeteer.connect({
+      browserWSEndpoint: browserlessClient.url,
+    })
+    console.log(`[${Date.now()}] browser:`, browser);
+    return browser;
+    }
+    catch (error) {
+      throw new Error(`[${Date.now()}] Error creating browser! ${error.message}`);
+    }
   }
-  catch (error) {
-    throw new Error(`[${Date.now()}] Error creating browser! ${error.message}`);
-  }
+  //return { browser:()=>setTimeout(browser, 1000) };
+  return { browser:browser };
 }
 
 
@@ -58,6 +59,14 @@ export function createTextEncoder():TextEncoder{
     return textEncoder;
 }
 
+export function createHexEncoder(textEncoder:TextEncoder):HexEncoder{
+    const hexEncoder: HexEncoder = {
+        encode: (input: string) => {
+            return Array.from(textEncoder.encode(input)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+    }
+    return hexEncoder;
+}
 
 export function createAnthropicClient(ctx:Env=Deno.env):Anthropic{
     const anthropicApiKey: string = ctx.get('ANTHROPIC_API_KEY') as string;

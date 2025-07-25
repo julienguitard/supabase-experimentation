@@ -25,6 +25,7 @@ FROM (
         ) c USING (id)
 ) AS uncrawled_links
 WHERE
-    crawled = 0
-ORDER BY RANDOM()
-LIMIT 5);
+    crawled = 0);
+
+CREATE OR REPLACE VIEW tmp_links_to_crawl AS (
+    SELECT * FROM links_to_crawl ORDER BY RANDOM() LIMIT 3);

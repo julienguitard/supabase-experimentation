@@ -1,5 +1,5 @@
-import type { SingleBrowsingResponseDTO, SingleCrawlableDTO, SingleCrawledDTO } from "@types";
-import type { Browser } from "npm:puppeteer-core"
+import type { SingleBrowsingResponseDTO, SingleCrawlableDTO, SingleCrawledDTO, Browser } from "@types";
+//import type { Browser } from "npm:puppeteer-core"
 
 export async function executeSingleBrowsing(browser:Browser,singleCrawlableDTO:SingleCrawlableDTO):Promise<SingleCrawledDTO>{
     try {
@@ -11,6 +11,7 @@ export async function executeSingleBrowsing(browser:Browser,singleCrawlableDTO:S
         console.log(`[${Date.now()}] content:`, content);
         const status = content.includes('404') ? 404 : 200;
         console.log(`[${Date.now()}] status:`, status);
+        await page.close();
         return {linkId:singleCrawlableDTO.linkId, content, status, error:null};
     }
     catch (error) {

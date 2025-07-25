@@ -1,4 +1,6 @@
-CREATE OR REPLACE FUNCTION insert_into_summaries() RETURNS SETOF summaries
+drop function if exists insert_into_summaries;
+
+CREATE FUNCTION insert_into_summaries() RETURNS SETOF summaries
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
@@ -16,7 +18,7 @@ BEGIN
             gen_random_uuid() AS id,
             NOW() AS created_at,
             content_id,
-            CAST(summary AS bytea) AS summary
+            decode(hex_summary,'hex') AS summary
         FROM
             tmp_summaries_insert
         WHERE
