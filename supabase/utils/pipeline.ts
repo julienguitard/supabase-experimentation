@@ -169,11 +169,20 @@ export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDT
 export async function executeBrowsing(browserFactory:BrowserFactory,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
     try {
         if (!isSingleCrawlableDTO(crawlableDTO)) {
-            const crawledDTO = await Promise.all(crawlableDTO.map(async (singleCrawlableDTO)=>executeSingleBrowsing(browserFactory.browser(),singleCrawlableDTO)));
+            const crawledDTO: CrawledDTO = [];
+            for (const singleCrawlableDTO of crawlableDTO) {
+                console.log(`[${Date.now()}] executing single browsing for ${singleCrawlableDTO.url}`);
+                const browser = await browserFactory.browser();
+                const singleCrawledDTO = await executeSingleBrowsing(browser,singleCrawlableDTO);
+                crawledDTO.push(singleCrawledDTO);
+                await browser.close();
+            }
             return crawledDTO;
         }
         else {
-            const crawledDTO = await executeSingleBrowsing(browserFactory.browser(),crawlableDTO);
+            const browser = await browserFactory.browser();
+            const crawledDTO = await executeSingleBrowsing(browser,crawlableDTO);
+            await browser.close();
             return crawledDTO;
         }
     }

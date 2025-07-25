@@ -50,7 +50,7 @@ export function createBrowserFactory(ctx:Env=Deno.env):BrowserFactory{
     }
   }
   //return { browser:()=>setTimeout(browser, 1000) };
-  return { browser:browser };
+  return {browser};
 }
 
 
