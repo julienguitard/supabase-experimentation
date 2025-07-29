@@ -33,9 +33,10 @@ export type Message<T> = {
 
 export type RequestDTO = {
     method:string;
+    url?: string;
     urlSearchParams: Record<string, string>;
     authHeader?: string;
-    body?: unknown;
+    body?: ReturnType<Request["json"]>;
 }
 
 export type SingleCrawlableDTO = {
@@ -44,7 +45,13 @@ export type SingleCrawlableDTO = {
     headers: Record<string, string>;
 }
 
-export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;
+export type SingleCrawlableDTO22 = RequestDTO & {
+    linkId: string;
+}
+
+export type CrawlableDTO = OneOrMany<SingleCrawlableDTO22>;
+
+export type CrawlableDTO22 = OneOrMany<SingleCrawlableDTO22>;
 
 
 export type SingleBrowsingResponseDTO = {
@@ -53,9 +60,21 @@ export type SingleBrowsingResponseDTO = {
     error: number;
 }
 
+export type SingleCrawledDTO22 = ResponseDTO & {
+    linkId: string;
+}
+
+export type CrawlQuery = {
+    crawlableDTO22: CrawlableDTO22;
+    browserlessClient?: BrowserlessClient;
+    browser?: Browser;
+}
+
 export type SingleCrawledDTO = SingleBrowsingResponseDTO & {linkId:string};
 
 export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
+
+export type CrawledDTO22 = OneOrMany<SingleCrawledDTO22>;
 
 export type ContentsRowDTO = {
     link_id: string;

@@ -1,8 +1,9 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, HexEncoder, Browser, BrowserFactory} from "@types";
-import { isSingleCrawlableDTO, isSingleCrawledDTO } from "../../packages/types/guards.ts";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, HexEncoder, Browser, BrowserFactory, CrawlableDTO22, CrawledDTO22,  CrawlQuery, Client, BrowserlessClient} from "@types";
+import { isSingleCrawlableDTO, isSingleCrawledDTO, isSingleCrawlableDTO22, isSingleCrawledDTO22 } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/translate-to-dbquerydto-transformation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
 import { executeSingleBrowsing } from "./transformations/single-browsing-execution.ts";
+
 
 
 export async function parseRequest(req:Request):RequestDTO{
@@ -33,7 +34,7 @@ export async function parseRequest(req:Request):RequestDTO{
     }
     const urlSearchParams = {table, id};
     const authHeader = headers.get('Authorization');
-    return {method, urlSearchParams, authHeader, body};
+    return {method, url:url.pathname, urlSearchParams, authHeader, body};
 }
 
 export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string):DBQueryDTO{
@@ -165,6 +166,58 @@ export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDT
         return data.map((d)=>({linkId: d.id, url:d.url, headers:{}}))
     }
 }   
+
+export function formatToCrawlableDTO22(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO22{
+    const {data, error} = dbResponseDTO;
+    if (error) {
+        throw new Error('Error formatting to crawlable DTO');
+    }
+    else {
+        return data.map((d)=>({method: 'GET', url:d.url, headers:{}, linkId: d.id,}))
+    }
+}
+
+export function compileToCrawlQuery(crawlableDTO22:CrawlableDTO22, browserlessClient?:BrowserlessClient, browser?:Browser):CrawlQuery{
+    if (browserlessClient) {
+        throw new Error('Browserless client not supported yet');//TODO: implement browserless client
+    }
+    else if (browser) {
+        throw new Error('Browser not supported yet');//TODO: implement browser
+    }
+    else {
+        return crawlableDTO22;
+    }
+}
+
+export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDTO22>{
+    const {crawlableDTO22, browserlessClient, browser} = crawlQuery;
+    if (browserlessClient) {
+        throw new Error('Browserless client not supported yet');//TODO: implement browserless client
+    }
+    else if (browser) {
+        throw new Error('Browser not supported yet');//TODO: implement browser
+    }
+    else if (isSingleCrawlableDTO22(crawlableDTO22)) {
+        const {method, url, headers, linkId} = crawlableDTO22;
+        const response = await fetch(url, {method, headers});
+        const body = await response.text();
+        const status = response.status;
+        const headers_ = response.headers;
+        return {linkId, status, headers:headers_, body};
+    }
+    else {
+        const crawledDTO: CrawledDTO22 = [];
+        for (const singleCrawlableDTO of crawlableDTO22) {
+            const response = await fetch(singleCrawlableDTO.url, {method: singleCrawlableDTO.method, headers: singleCrawlableDTO.headers});
+            const body = await response.text();
+            const status = response.status;
+            const headers_ = response.headers;
+            crawledDTO.push({linkId: singleCrawlableDTO.linkId, status, headers:headers_, body});
+        }
+        return crawledDTO;
+        
+    }
+}
 
 export async function executeBrowsing(browserFactory:BrowserFactory,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
     try {
