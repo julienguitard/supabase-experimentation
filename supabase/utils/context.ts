@@ -26,8 +26,15 @@ export function createBrowserlessClient(ctx:Env=Deno.env):BrowserlessClient{
     const browserlessClient: BrowserlessClient = {
         url: url,
         headers: headers,
-        completeURL: (fetchableUrl:string)=>{
-            return url + '?url=' + fetchableUrl;
+        completeBody: (fetchableUrl:string)=>{
+            return {
+              url: fetchableUrl,
+              elements: [
+                  {
+                      selector:'p'
+                  }
+              ]
+          }
         }
     }
     return browserlessClient;

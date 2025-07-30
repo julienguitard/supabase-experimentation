@@ -13,6 +13,7 @@ export type Env = {
 export type BrowserlessClient = {
     url: string;
     headers: Record<string, string>;
+    completeBody: (fetchableUrl:string)={url:string, elements: {selector:string}[]};
 }
 
 export type BrowserFactory = {
