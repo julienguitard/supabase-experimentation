@@ -1,8 +1,7 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, HexEncoder, Browser, BrowserFactory, CrawlableDTO22, CrawledDTO22,  CrawlQuery, Client, BrowserlessClient} from "@types";
-import { isSingleCrawlableDTO, isSingleCrawledDTO, isSingleCrawlableDTO22, isSingleCrawledDTO22 } from "../../packages/types/guards.ts";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, HexEncoder, Browser, BrowserFactory, CrawlableDTO, CrawledDTO,  CrawlQuery, Client, BrowserlessClient} from "@types";
+import { isSingleCrawlableDTO, isSingleCrawledDTO } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/translate-to-dbquerydto-transformation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
-import { executeSingleBrowsing } from "./transformations/single-browsing-execution.ts";
 
 
 
@@ -157,7 +156,7 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
     }
 }
 
-export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
+/*export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to crawlable DTO');
@@ -165,9 +164,9 @@ export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDT
     else {
         return data.map((d)=>({linkId: d.id, url:d.url, headers:{}}))
     }
-}   
+}   */
 
-export function formatToCrawlableDTO22(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO22{
+export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to crawlable DTO');
@@ -177,43 +176,43 @@ export function formatToCrawlableDTO22(dbResponseDTO:DBResponseDTO<T>):Crawlable
     }
 }
 
-export function compileToCrawlQuery(crawlableDTO22:CrawlableDTO22, browserlessClient?:BrowserlessClient, browser?:Browser):CrawlQuery{
+export function compileToCrawlQuery(crawlableDTO:CrawlableDTO, browserlessClient?:BrowserlessClient, browser?:Browser):CrawlQuery{
     if (browserlessClient) {
-        let crawlableDTO22_:CrawlableDTO22;
+        let crawlableDTO_:CrawlableDTO;
         let body:Option<string>;
-        if (isSingleCrawlableDTO22(crawlableDTO22)) {
-             crawlableDTO22_ = {method: 'POST', url:browserlessClient.url,
-                 headers:browserlessClient.headers, linkId: crawlableDTO22.linkId,
-                 body:browserlessClient.completeBody(crawlableDTO22.url)};
+        if (isSingleCrawlableDTO(crawlableDTO)) {
+             crawlableDTO_ = {method: 'POST', url:browserlessClient.url,
+                 headers:browserlessClient.headers, linkId: crawlableDTO.linkId,
+                 body:browserlessClient.completeBody(crawlableDTO.url)};
         }
         else {
-            crawlableDTO22_ = crawlableDTO22.map((c)=>({method: 'POST', url:browserlessClient.url, headers: browserlessClient.headers, linkId: c.linkId,body:browserlessClient.completeBody(c.url)}));
+            crawlableDTO_ = crawlableDTO.map((c)=>({method: 'POST', url:browserlessClient.url, headers: browserlessClient.headers, linkId: c.linkId,body:browserlessClient.completeBody(c.url)}));
         }
         if (browser) {
 
-            return {crawlableDTO22: crawlableDTO22_, browser, browserlessClient};//TODO: implement browser
+            return {crawlableDTO: crawlableDTO_, browser, browserlessClient};//TODO: implement browser
         }
         
         else {
-            return {crawlableDTO22: crawlableDTO22_, browserlessClient};
+            return {crawlableDTO: crawlableDTO_, browserlessClient};
         }
     }
     else if (browser) {
-        return {crawlableDTO22, browser};//TODO: implement browser
+        return {crawlableDTO, browser};//TODO: implement browser
     }
     else {
-        return {crawlableDTO22};
+        return {crawlableDTO};
     }
 }
 
-export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDTO22>{
-    const {crawlableDTO22, browserlessClient, browser} = crawlQuery;
+export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDTO>{
+    const {crawlableDTO, browserlessClient, browser} = crawlQuery;
     if (browser) {
         throw new Error('Browser not supported yet');//TODO: implement browser
     }
     else {
-        if (isSingleCrawlableDTO22(crawlableDTO22)) {
-            const {method, url, headers, linkId, body} = crawlableDTO22;
+        if (isSingleCrawlableDTO(crawlableDTO)) {
+            const {method, url, headers, linkId, body} = crawlableDTO;
             let response:Response;
             if (browserlessClient) {
                 response = await fetch(url, {method, headers, body});
@@ -227,8 +226,8 @@ export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDT
             return {linkId, status, headers:headers_, body:body_};
         }
         else {
-            const crawledDTO: CrawledDTO22 = [];
-            for (const singleCrawlableDTO of crawlableDTO22) {
+            const crawledDTO: CrawledDTO = [];
+            for (const singleCrawlableDTO of crawlableDTO) {
                 let response:Response;
                 if (browserlessClient) {
                     response = await fetch(singleCrawlableDTO.url, {method: singleCrawlableDTO.method, headers: singleCrawlableDTO.headers, body: singleCrawlableDTO.body});
@@ -239,26 +238,26 @@ export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDT
                 const body_ = await response.text();
                 const status = response.status;
                 const headers_ = response.headers;
-                crawledDTO.push({linkId: singleCrawlableDTO.linkId, status, headers:headers_, body:body_});
+                crawledDTO.push({linkId: singleCrawlableDTO.linkId, status, headers:headers_, body:body_.slice(0,1000)});//TO DO remove slice
             }
             return crawledDTO;
         }
     }
 }
 
-export function translateCrawledDTOToDBQueryDTO(hexEncoder,crawledDTO22:CrawledDTO22):DBQueryDTO{
-    if (isSingleCrawledDTO22(crawledDTO22)) {
-        const {linkId, status, headers, body} = crawledDTO22;
+export function translateCrawledDTOToDBQueryDTO(hexEncoder,crawledDTO:CrawledDTO):DBQueryDTO{
+    if (isSingleCrawledDTO(crawledDTO)) {
+        const {linkId, status, headers, body} = crawledDTO;
         return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexEncoder.encode(body)}], SQLFunction: 'insert_into_contents'};
     }
     else {
-        const rows = crawledDTO22.map((crawledDTO22)=>({link_id: crawledDTO22.linkId, status: crawledDTO22.status, hex_content:hexEncoder.encode(crawledDTO22.body)}));
+        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:hexEncoder.encode(crawledDTO.body)}));
         return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows, SQLFunction: 'insert_into_contents'};
     }
     
 }
 
-export async function executeBrowsing(browserFactory:BrowserFactory,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
+/*export async function executeBrowsing(browserFactory:BrowserFactory,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
     try {
         if (!isSingleCrawlableDTO(crawlableDTO)) {
             const crawledDTO: CrawledDTO = [];
@@ -297,7 +296,7 @@ export function translateCrawledDTOToRequestDTO(hexEncoder:HexEncoder,crawledDTO
     }
     console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, 'returning request DTO');
     return {method: 'POST', urlSearchParams: {}, authHeader: null, body: rows};
-}
+}*/
 
 export function formatToResponseDTO(res:DBResponseDTO<T>):ResponseDTO{
     const {data, error} = res;

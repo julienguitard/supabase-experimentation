@@ -19,6 +19,7 @@ export type BrowserlessClient = {
 export type BrowserFactory = {
     browser: () => Promise<Browser>;
 }
+
 export type HexEncoder = {
     encode: (input: string) => string;
 }
@@ -40,48 +41,48 @@ export type RequestDTO = {
     body?: ReturnType<Request["json"]>;
 }
 
-export type SingleCrawlableDTO = {
+/*export type SingleCrawlableDTO = {
     linkId: string;
     url: string;
     headers: Record<string, string>;
-}
+}*/
 
-export type SingleCrawlableDTO22 = RequestDTO & {
+export type SingleCrawlableDTO = RequestDTO & {
     linkId: string;
 }
 
-export type CrawlableDTO = OneOrMany<SingleCrawlableDTO22>;
+/*export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;*/
 
-export type CrawlableDTO22 = OneOrMany<SingleCrawlableDTO22>;
+export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;
 
 
-export type SingleBrowsingResponseDTO = {
+/*export type SingleBrowsingResponseDTO = {
     content: string;
     status: number;
     error: number;
-}
+}*/
 
-export type SingleCrawledDTO22 = ResponseDTO & {
+export type SingleCrawledDTO = ResponseDTO & {
     linkId: string;
 }
 
 export type CrawlQuery = {
-    crawlableDTO22: CrawlableDTO22;
+    crawlableDTO: CrawlableDTO;
     browserlessClient?: BrowserlessClient;
     browser?: Browser;
 }
 
-export type SingleCrawledDTO = SingleBrowsingResponseDTO & {linkId:string};
+/*export type SingleCrawledDTO = SingleBrowsingResponseDTO & {linkId:string};*/
+
+/*export type CrawledDTO = OneOrMany<SingleCrawledDTO>;*/
 
 export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
 
-export type CrawledDTO22 = OneOrMany<SingleCrawledDTO22>;
-
-export type ContentsRowDTO = {
+/*export type ContentsRowDTO = {
     link_id: string;
     status: number;
     content: Uint8Array;
-}
+}*/
 
 export type LLMRequestDTO = {
     model: string;

@@ -1,11 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import type { Option, Browser, SupabaseClient } from '@types';
-import { createBrowserFactory, createHexEncoder, createSupabaseClient, createUser } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateToDBQueryDTO, formatToCrawlableDTO, executeBrowsing, translateCrawledDTOToDBQueryDTO, translateCrawledDTOToRequestDTO } from "../../utils/pipeline.ts";
+import type { Option, Browser, BrowserFactory, BrowserlessClient, SupabaseClient } from '@types';
+import { createBrowserFactory, createBrowserlessClient, createHexEncoder, createSupabaseClient, createUser } from "../../utils/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateToDBQueryDTO, translateCrawledDTOToDBQueryDTO, formatToCrawlableDTO, compileToCrawlQuery, executeCrawlQuery } from "../../utils/pipeline.ts";
 
 
 const supabaseClient: SupabaseClient = createSupabaseClient();
 const browserFactory: BrowserFactory = createBrowserFactory();
+const browserlessClient: BrowserlessClient = createBrowserlessClient();
 const textEncoder = new TextEncoder();
 const hexEncoder = createHexEncoder(textEncoder);
 const edgeFunction: string = 'fetch-links';
@@ -37,19 +38,21 @@ Deno.serve(async (req:Request)=>{
   const crawlableDTO = formatToCrawlableDTO(queryResult);
   console.log(`[${Date.now()}] Step 05 complete: Crawlable DTO:`, crawlableDTO);
 
- // Step 06: Execute the browsing
-  console.log(`[${Date.now()}] Step 06: Executing browsing...`);
-  const crawledDTO = await executeBrowsing(browserFactory,crawlableDTO);
-  console.log(`[${Date.now()}] Step 06 complete: Crawled DTO:`, crawledDTO);
+  //Step 06: Compile the crawlable DTO to crawl query
+  console.log(`[${Date.now()}] Step 06: Compiling crawl query...`);
+  //const crawlQuery = compileToCrawlQuery(crawlableDTO, browserlessClient);
+  const crawlQuery = compileToCrawlQuery(crawlableDTO);
+  console.log(`[${Date.now()}] Step 06 complete: Crawl query:`, crawlQuery);
 
-// Step 07: Translate the crawled DTO to request DTO
-  console.log(`[${Date.now()}] Step 07: Translating crawled DTO to request DTO...`);
-  const requestDTO2 = translateCrawledDTOToRequestDTO(hexEncoder,crawledDTO);
-  console.log(`[${Date.now()}] Step 07 complete: Request DTO:`, requestDTO2);
+  //Step 07: Execute the crawal query
+  console.log(`[${Date.now()}] Step 07: Executing crawl query...`);
+  const crawledDTO = await executeCrawlQuery(crawlQuery);
+  console.log(`[${Date.now()}] Step 07 complete: Crawled DTO:`, crawledDTO);
 
-// Step 08: Translate the request DTO to database query DTO
-  console.log(`[${Date.now()}] Step 08: Translating request DTO to database query DTO...`);
-  const dbQueryDTO2 = translateToDBQueryDTO(requestDTO2, edgeFunction, 'fetch-contents');
+
+// Step 08: Translate the crawled DTO to database query DTO
+  console.log(`[${Date.now()}] Step 08: Translating crawled DTO to database query DTO...`);
+  const dbQueryDTO2 = translateCrawledDTOToDBQueryDTO(hexEncoder,crawledDTO);
   console.log(`[${Date.now()}] Step 08 complete: Database query DTO:`, dbQueryDTO2);
 
 // Step 09: Compile the database query DTO to actual database query
