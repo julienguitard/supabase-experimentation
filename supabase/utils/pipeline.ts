@@ -237,13 +237,13 @@ export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDT
     }
 }
 
-export function translateCrawledDTOToDBQueryDTO(textCoder:TextCoder,crawledDTO:CrawledDTO):DBQueryDTO{
+export function translateCrawledDTOToDBQueryDTO(hexCoder:HexCoder,crawledDTO:CrawledDTO):DBQueryDTO{
     if (isSingleCrawledDTO(crawledDTO)) {
         const {linkId, status, headers, body} = crawledDTO;
-        return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:textCoder.encode(body)}], SQLFunction: 'insert_into_contents'};
+        return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body)}], SQLFunction: 'insert_into_contents'};
     }
     else {
-        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:textCoder.encode(crawledDTO.body)}));
+        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:hexCoder.encode(crawledDTO.body)}));
         return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows, SQLFunction: 'insert_into_contents'};
     }
     

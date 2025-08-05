@@ -52,7 +52,7 @@ Deno.serve(async (req:Request)=>{
 
 // Step 08: Translate the crawled DTO to database query DTO
   console.log(`[${Date.now()}] Step 08: Translating crawled DTO to database query DTO...`);
-  const dbQueryDTO2 = translateCrawledDTOToDBQueryDTO(textCoder,crawledDTO);
+  const dbQueryDTO2 = translateCrawledDTOToDBQueryDTO(hexCoder,crawledDTO);
   console.log(`[${Date.now()}] Step 08 complete: Database query DTO:`, dbQueryDTO2);
 
 // Step 09: Compile the database query DTO to actual database query
