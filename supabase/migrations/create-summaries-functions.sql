@@ -1,31 +1,20 @@
 drop function if exists insert_into_summaries;
 
-CREATE FUNCTION insert_into_summaries() RETURNS SETOF summaries
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+create function insert_into_summaries () RETURNS SETOF summaries LANGUAGE plpgsql SECURITY DEFINER as $$
 BEGIN
-    -- Perform the merge operation to insert HTTP responses into contents table
+    -- Perform the merge operation
     RETURN QUERY
     WITH merged AS (
-        INSERT INTO summaries (
-            id, 
-            created_at,
-            content_id,
-            summary
-        )
-        SELECT
-            gen_random_uuid() AS id,
-            NOW() AS created_at,
-            content_id,
-            decode(hex_summary,'hex') AS summary
-        FROM
-            tmp_summaries_insert
-        WHERE
-            false
+        MERGE INTO summaries t
+        USING tmp_summaries_insert s
+        ON t.content_id = s.content_id
+        WHEN MATCHED THEN DO NOTHING
+        WHEN NOT MATCHED BY TARGET THEN INSERT VALUES 
+        (gen_random_uuid(), NOW(), s.content_id, decode(s.hex_summary, 'hex'))
+        RETURNING t.*
     )
     SELECT * FROM merged;
-
+    
     -- Clean up the tmp table
     DELETE FROM tmp_summaries_insert WHERE TRUE;
 END;

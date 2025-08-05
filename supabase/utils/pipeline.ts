@@ -1,8 +1,10 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, HexEncoder, Browser, BrowserFactory, CrawlableDTO, CrawledDTO,  CrawlQuery, Client, BrowserlessClient} from "@types";
-import { isSingleCrawlableDTO, isSingleCrawledDTO } from "../../packages/types/guards.ts";
-import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/translate-to-dbquerydto-transformation.ts";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, TextCoder, HexCoder, Browser, BrowserFactory, CrawlQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI} from "@types";
+import { isSingleCrawlableDTO, isSingleCrawledDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO } from "../../packages/types/guards.ts";
+import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
-
+import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
+import { SingleLLMRequestDTO } from "../../packages/types/index.ts";
+import { invoke } from "./transformations/llmmodel-compilation.ts";
 
 
 export async function parseRequest(req:Request):RequestDTO{
@@ -156,16 +158,6 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
     }
 }
 
-/*export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
-    const {data, error} = dbResponseDTO;
-    if (error) {
-        throw new Error('Error formatting to crawlable DTO');
-    }
-    else {
-        return data.map((d)=>({linkId: d.id, url:d.url, headers:{}}))
-    }
-}   */
-
 export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
     const {data, error} = dbResponseDTO;
     if (error) {
@@ -245,58 +237,64 @@ export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDT
     }
 }
 
-export function translateCrawledDTOToDBQueryDTO(hexEncoder,crawledDTO:CrawledDTO):DBQueryDTO{
+export function translateCrawledDTOToDBQueryDTO(textCoder:TextCoder,crawledDTO:CrawledDTO):DBQueryDTO{
     if (isSingleCrawledDTO(crawledDTO)) {
         const {linkId, status, headers, body} = crawledDTO;
-        return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexEncoder.encode(body)}], SQLFunction: 'insert_into_contents'};
+        return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:textCoder.encode(body)}], SQLFunction: 'insert_into_contents'};
     }
     else {
-        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:hexEncoder.encode(crawledDTO.body)}));
+        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:textCoder.encode(crawledDTO.body)}));
         return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows, SQLFunction: 'insert_into_contents'};
     }
     
 }
 
-/*export async function executeBrowsing(browserFactory:BrowserFactory,crawlableDTO:CrawlableDTO):Promise<CrawledDTO>{
-    try {
-        if (!isSingleCrawlableDTO(crawlableDTO)) {
-            const crawledDTO: CrawledDTO = [];
-            for (const singleCrawlableDTO of crawlableDTO) {
-                console.log(`[${Date.now()}] executing single browsing for ${singleCrawlableDTO.url}`);
-                const browser = await browserFactory.browser();
-                const singleCrawledDTO = await executeSingleBrowsing(browser,singleCrawlableDTO);
-                crawledDTO.push(singleCrawledDTO);
-                await browser.close();
-            }
-            return crawledDTO;
-        }
-        else {
-            const browser = await browserFactory.browser();
-            const crawledDTO = await executeSingleBrowsing(browser,crawlableDTO);
-            await browser.close();
-            return crawledDTO;
-        }
+export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):Promise<LLMRequestDTO>{
+    const {data, error} = dbResponseDTO;
+    if (error) {
+        throw new Error('Error formatting to LLM request DTO');
     }
-    catch (executeBrowsingError) {
-        throw new Error('Error executing browser query:',executeBrowsingError.message);
+    else {
+        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCoder,d.hex_content, d.category), metadata:{contentId: d.id}}));
     }
 }
 
-export function translateCrawledDTOToRequestDTO(hexEncoder:HexEncoder,crawledDTO:CrawledDTO):RequestDTO{
-    console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, crawledDTO);
-    let rows:ContentsRowDTO[];
-    if (!isSingleCrawledDTO(crawledDTO)) {
-        rows = crawledDTO.map((crawledDTO)=>translateSingleCrawledDTOToContentsRowDTO(hexEncoder,crawledDTO))
-        console.log(`[${Date.now()}] rows:`, rows);
+export function compileToLLMModel(openAIClient:OpenAI,llmRequestDTO:LLMRequestDTO):LLMModel{
+    return {LLMRequestDTO:llmRequestDTO, invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>invoke(openAIClient,singlellmRequestDTO)};
+}
+
+export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>{
+    const {LLMRequestDTO, invoke} = llmModel;
+    if (isSingleLLMRequestDTO(LLMRequestDTO)) {
+        const response = await invoke(LLMRequestDTO);
+        return {response, metadata: LLMRequestDTO.metadata};
     }
     else {
-       console.log(`[${Date.now()}] crawledDTO:`, 'is single crawled DTO');
-       rows = [translateSingleCrawledDTOToContentsRowDTO(hexEncoder,crawledDTO)]
-       console.log(`[${Date.now()}] rows:`, rows);
+        const llmResponseDTO:LLMResponseDTO = [];
+        for (const llmRequestDTO of LLMRequestDTO) {
+            const response = await invoke(llmRequestDTO);
+            llmResponseDTO.push({response, metadata: llmRequestDTO.metadata});
+        }
+        return llmResponseDTO;
     }
-    console.log(`[${Date.now()}] translateCrawledDTOToRequestDTO:`, 'returning request DTO');
-    return {method: 'POST', urlSearchParams: {}, authHeader: null, body: rows};
-}*/
+}
+
+export function translateLLMResponseDTOToDBQueryDTO(hexCoder:HexCoder,llmResponseDTO:LLMResponseDTO):DBQueryDTO{
+    if (isSingleLLMResponseDTO(llmResponseDTO)) {
+        const {response, metadata} = llmResponseDTO;
+        if (metadata) {
+            return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows: [{content_id: metadata.contentId, hex_summary:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
+        }
+        else {
+            throw new Error('Metadata is required');
+        }
+    }
+    else {
+        const rows = llmResponseDTO.map((llmResponseDTO)=>({content_id: llmResponseDTO.metadata.contentId,
+             hex_summary:hexCoder.encode(llmResponseDTO.response)}));
+        return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows, SQLFunction: 'insert_into_summaries'};
+    }
+}
 
 export function formatToResponseDTO(res:DBResponseDTO<T>):ResponseDTO{
     const {data, error} = res;

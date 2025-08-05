@@ -1,10 +1,11 @@
-import type { Option, Env, BrowserlessClient, User, HexEncoder, Browser, BrowserFactory } from "@types";
+import type { Option, Env, BrowserlessClient, User, TextCoder, Browser, BrowserFactory, HexCoder } from "@types";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import Anthropic from 'npm:@anthropic-ai/sdk';
 import OpenAI from 'npm:openai';
 import {Browserless} from "npm:browserless";
 import puppeteer from "npm:puppeteer-core";
+
 
 
 // Create a Supabase client
@@ -61,18 +62,25 @@ export function createBrowserFactory(ctx:Env=Deno.env):BrowserFactory{
 }
 
 
-export function createTextEncoder():TextEncoder{
+export function createTextCoder():TextCoder{
     const textEncoder: TextEncoder = new TextEncoder();
-    return textEncoder;
+    const textDecoder: TextDecoder = new TextDecoder();
+    return {textEncoder, textDecoder};
 }
 
-export function createHexEncoder(textEncoder:TextEncoder):HexEncoder{
-    const hexEncoder: HexEncoder = {
+export function createHexCoder(textCoder:TextCoder):HexCoder{
+    const hexCoder: HexCoder = {
         encode: (input: string) => {
-            return Array.from(textEncoder.encode(input)).map(b => b.toString(16).padStart(2, '0')).join('');
+            return Array.from(textCoder.textEncoder.encode(input)).map(b => b.toString(16).padStart(2, '0')).join('');
+        },
+        decode: (hexString: string) => {
+            // Convert hex string back to bytes
+            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+            // Convert bytes back to string
+            return new TextDecoder().decode(bytes);
         }
     }
-    return hexEncoder;
+    return hexCoder;
 }
 
 export function createAnthropicClient(ctx:Env=Deno.env):Anthropic{
@@ -104,3 +112,14 @@ export function createOpenAIClient(ctx:Env=Deno.env):OpenAI{
         return null
       }
     }
+
+export function createMarkdownReader(): (filePath: string) => Promise<string> {
+  return async (filePath: string): Promise<string> => {
+    try {
+      const content = await Deno.readTextFile(filePath);
+      return content;
+    } catch (error) {
+      throw new Error(`Failed to read markdown file at ${filePath}: ${error.message}`);
+    }
+  };
+}

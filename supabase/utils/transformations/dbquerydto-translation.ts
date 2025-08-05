@@ -1,5 +1,5 @@
-import type { ContentsRowDTO, Option, SingleCrawledDTO, HexEncoder } from "@types";
-import { createTextEncoder, createHexEncoder } from "../context.ts";
+import type { ContentsRowDTO, Option, SingleCrawledDTO, HexCoder } from "@types";
+import { createTextCoder, createHexCoder } from "../context.ts";
 
 export function edgeFunctionToStatement(edgeFunction:string,step?:string):string{
     if (edgeFunction.includes('insert')){
@@ -20,6 +20,17 @@ export function edgeFunctionToStatement(edgeFunction:string,step?:string):string
         }
         else {
             return 'select';
+        }
+    }
+    else if (edgeFunction.includes('summarize')){
+        if (step === 'select-contents'){
+            return 'select';
+        }
+        else if (step === 'summarize-contents'){
+            return 'insert';
+        }
+        else {
+            return 'insert';
         }
     }
     else {
@@ -76,12 +87,12 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
 }
 
 export function translateSingleCrawledDTOToContentsRowDTO(
-  hexEncoder: HexEncoder,
+  hexCoder: HexCoder,
   crawledDTO: SingleCrawledDTO
 ): ContentsRowDTO {
   return {
     link_id: crawledDTO.linkId,
     status: crawledDTO.status,
-    hex_content: hexEncoder.encode(crawledDTO.content),
+    hex_content: hexCoder.encode(crawledDTO.content),
   };
 }

@@ -1,0 +1,1 @@
+export const userPrompt = `Please summarize this {html} content in human-readable form. The content is likely to belong to this {category}. Please be short (3 or 4 paragaphs)`;

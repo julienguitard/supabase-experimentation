@@ -1,14 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { Option, Browser, BrowserFactory, BrowserlessClient, SupabaseClient } from '@types';
-import { createBrowserFactory, createBrowserlessClient, createHexEncoder, createSupabaseClient, createUser } from "../../utils/context.ts";
+import { createBrowserFactory, createBrowserlessClient, createTextCoder, createSupabaseClient, createUser, createHexCoder } from "../../utils/context.ts";
 import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateToDBQueryDTO, translateCrawledDTOToDBQueryDTO, formatToCrawlableDTO, compileToCrawlQuery, executeCrawlQuery } from "../../utils/pipeline.ts";
 
 
 const supabaseClient: SupabaseClient = createSupabaseClient();
 const browserFactory: BrowserFactory = createBrowserFactory();
 const browserlessClient: BrowserlessClient = createBrowserlessClient();
-const textEncoder = new TextEncoder();
-const hexEncoder = createHexEncoder(textEncoder);
+const textCoder = createTextCoder();
+const hexCoder = createHexCoder(textCoder);
 const edgeFunction: string = 'fetch-links';
 
 Deno.serve(async (req:Request)=>{
@@ -52,7 +52,7 @@ Deno.serve(async (req:Request)=>{
 
 // Step 08: Translate the crawled DTO to database query DTO
   console.log(`[${Date.now()}] Step 08: Translating crawled DTO to database query DTO...`);
-  const dbQueryDTO2 = translateCrawledDTOToDBQueryDTO(hexEncoder,crawledDTO);
+  const dbQueryDTO2 = translateCrawledDTOToDBQueryDTO(textCoder,crawledDTO);
   console.log(`[${Date.now()}] Step 08 complete: Database query DTO:`, dbQueryDTO2);
 
 // Step 09: Compile the database query DTO to actual database query

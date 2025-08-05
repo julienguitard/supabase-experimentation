@@ -1,5 +1,6 @@
 import type { PostgresError } from "jsr:@supabase/supabase-js@2";
 import type { Browser } from "npm:puppeteer-core";
+import type { OpenAI} from "npm:@types/openai";
 
 export type Option<T> = T | null;
 
@@ -13,15 +14,21 @@ export type Env = {
 export type BrowserlessClient = {
     url: string;
     headers: Record<string, string>;
-    completeBody: (fetchableUrl:string)={url:string, elements: {selector:string}[]};
+    completeBody: (fetchableUrl:string)=>{url:string, elements: {selector:string}[]};
 }
 
 export type BrowserFactory = {
     browser: () => Promise<Browser>;
 }
 
-export type HexEncoder = {
+export type TextCoder = {
+    textEncoder: TextEncoder;
+    textDecoder: TextDecoder;
+}
+
+export type HexCoder = {
     encode: (input: string) => string;
+    decode: (hexString: string) => string;
 }
 // Shared TypeScript types will go here 
 export type User = {
@@ -41,26 +48,11 @@ export type RequestDTO = {
     body?: ReturnType<Request["json"]>;
 }
 
-/*export type SingleCrawlableDTO = {
-    linkId: string;
-    url: string;
-    headers: Record<string, string>;
-}*/
-
 export type SingleCrawlableDTO = RequestDTO & {
     linkId: string;
 }
 
-/*export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;*/
-
 export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;
-
-
-/*export type SingleBrowsingResponseDTO = {
-    content: string;
-    status: number;
-    error: number;
-}*/
 
 export type SingleCrawledDTO = ResponseDTO & {
     linkId: string;
@@ -72,28 +64,31 @@ export type CrawlQuery = {
     browser?: Browser;
 }
 
-/*export type SingleCrawledDTO = SingleBrowsingResponseDTO & {linkId:string};*/
-
-/*export type CrawledDTO = OneOrMany<SingleCrawledDTO>;*/
 
 export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
 
-/*export type ContentsRowDTO = {
-    link_id: string;
-    status: number;
-    content: Uint8Array;
-}*/
 
-export type LLMRequestDTO = {
+export type SingleLLMRequestDTO = {
     model: string;
     maxToken: number;
+    temperature?: number;
     messages: Message<string>[];
+    metadata?: Record<string, string>;
 }
 
-export type LLMResponseDTO = {
+export type LLMRequestDTO = OneOrMany<SingleLLMRequestDTO>;
+
+export type LLMModel = {
+    LLMRequestDTO:LLMRequestDTO;
+    invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
+}
+
+export type SingleLLMResponseDTO = {
     response: string;
-    response_type: string;
-};
+    response_type?: string;
+    metadata?: Record<string, string>;
+}
+export type LLMResponseDTO = OneOrMany<SingleLLMResponseDTO>;
 
 export type EmbeddingRequestDTO = {
     model: string;
