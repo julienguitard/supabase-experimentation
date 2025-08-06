@@ -3,7 +3,7 @@ import { isSingleCrawlableDTO, isSingleCrawledDTO, isSingleLLMRequestDTO, isSing
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
-import { SingleLLMRequestDTO } from "../../packages/types/index.ts";
+import { AIClient, SingleLLMRequestDTO } from "../../packages/types/index.ts";
 import { invoke } from "./transformations/llmmodel-compilation.ts";
 
 
@@ -259,8 +259,8 @@ export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponse
     }
 }
 
-export function compileToLLMModel(openAIClient:OpenAI,llmRequestDTO:LLMRequestDTO):LLMModel{
-    return {LLMRequestDTO:llmRequestDTO, invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>invoke(openAIClient,singlellmRequestDTO)};
+export function compileToLLMModel(aiClient:AIClient,llmRequestDTO:LLMRequestDTO):LLMModel{
+    return {client: aiClient, LLMRequestDTO:llmRequestDTO, invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>invoke(aiClient,singlellmRequestDTO)};
 }
 
 export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>{
