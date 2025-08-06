@@ -41,7 +41,7 @@ Deno.serve(async (req:Request)=>{
   //Step 06: Compile the crawlable DTO to crawl query
   console.log(`[${Date.now()}] Step 06: Compiling crawl query...`);
   //const crawlQuery = compileToCrawlQuery(crawlableDTO, browserlessClient);
-  const crawlQuery = compileToCrawlQuery(crawlableDTO);
+  const crawlQuery = compileToCrawlQuery(crawlableDTO,browserlessClient);
   console.log(`[${Date.now()}] Step 06 complete: Crawl query:`, crawlQuery);
 
   //Step 07: Execute the crawal query

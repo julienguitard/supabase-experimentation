@@ -20,7 +20,7 @@ export function createSupabaseClient(ctx:Env=Deno.env):SupabaseClient{
 export function createBrowserlessClient(ctx:Env=Deno.env):BrowserlessClient{
     const TOKEN: string = ctx.get('BROWSERLESS_API_KEY') as string;
     //const url = `https://production-sfo.browserless.io/scrape?token=${TOKEN}`;
-    const url = 'wss:///production-sfo.browserless.io?token=' + TOKEN;
+    const url = 'https://production-ams.browserless.io/scrape?token=' + TOKEN;
     const headers = {
       "Cache-Control": "no-cache",
       "Content-Type": "application/json"};

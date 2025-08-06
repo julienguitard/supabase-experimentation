@@ -1,6 +1,8 @@
 import type { PostgresError } from "jsr:@supabase/supabase-js@2";
 import type { Browser } from "npm:puppeteer-core";
 import type { OpenAI} from "npm:@types/openai";
+import type {Anthropic} from 'npm:@anthropic-ai/sdk';
+import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
 export type Option<T> = T | null;
 
@@ -64,9 +66,7 @@ export type CrawlQuery = {
     browser?: Browser;
 }
 
-
 export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
-
 
 export type SingleLLMRequestDTO = {
     model: string;
@@ -78,6 +78,8 @@ export type SingleLLMRequestDTO = {
 
 export type LLMRequestDTO = OneOrMany<SingleLLMRequestDTO>;
 
+export type AIClient = OpenAI | Anthropic | DeepSeek;
+
 export type LLMModel = {
     LLMRequestDTO:LLMRequestDTO;
     invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
@@ -88,6 +90,7 @@ export type SingleLLMResponseDTO = {
     response_type?: string;
     metadata?: Record<string, string>;
 }
+
 export type LLMResponseDTO = OneOrMany<SingleLLMResponseDTO>;
 
 export type EmbeddingRequestDTO = {
@@ -118,6 +121,7 @@ export type DBResponseDTO<T> = {
     data?: T;
     error?: PostgresError;
 }
+
 export type ResponseDTO = {
     status: number;
     headers: Record<string, string>;

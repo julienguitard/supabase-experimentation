@@ -182,7 +182,7 @@ export function compileToCrawlQuery(crawlableDTO:CrawlableDTO, browserlessClient
         }
         if (browser) {
 
-            return {crawlableDTO: crawlableDTO_, browser, browserlessClient};//TODO: implement browser
+            return {crawlableDTO: crawlableDTO_, browserlessClient, browser};//TODO: implement browser
         }
         
         else {
