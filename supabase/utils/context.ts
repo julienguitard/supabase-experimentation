@@ -1,10 +1,13 @@
-import type { Option, Env, BrowserlessClient, User, TextCoder, Browser, BrowserFactory, HexCoder } from "@types";
+import type { Option, Env, BrowserlessClient, User, TextCoder, Browser, BrowserFactory, HexCoder, Chunker, Tokenizer } from "@types";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import tiktoken from 'npm:tiktoken';
 import Anthropic from 'npm:@anthropic-ai/sdk';
 import OpenAI from 'npm:openai';
 import {Browserless} from "npm:browserless";
 import puppeteer from "npm:puppeteer-core";
+
+
 
 
 
@@ -81,6 +84,30 @@ export function createHexCoder(textCoder:TextCoder):HexCoder{
         }
     }
     return hexCoder;
+}
+
+export function createTokenizer(ctx:Env=Deno.env):Tokenizer{
+    const encode: (input: string) => number[] = (input: string) => {
+      return tiktoken.encode(input);
+    };
+    const decode: (tokens: number[]) => string = (tokens: number[]) => {
+      return tiktoken.decode(tokens);
+    };
+
+    return {encode,decode};
+}
+
+export function createChunker<T>(ctx:Env=Deno.env):Chunker<T>{
+    const listSlice:(input:T[])=>{start:number,end:number}[] = (input:T[])=>{
+      const length:number = input.length;
+      const slicesLength:number = Math.ceil(length/200);
+      const slicesList:{start:number,end:number}[] = [];
+      for(let i:number = 0; i < slicesLength; i++){
+        slicesList.push({start:i*200,end:i*200+200})
+      }
+      return slicesList;
+    }
+    return {listSlice};
 }
 
 export function createAnthropicClient(ctx:Env=Deno.env):Anthropic{

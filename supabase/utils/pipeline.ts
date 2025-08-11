@@ -230,7 +230,14 @@ export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDT
                 const body_ = await response.text();
                 const status = response.status;
                 const headers_ = response.headers;
-                crawledDTO.push({linkId: singleCrawlableDTO.linkId, status, headers:headers_, body:body_.slice(0,1000)});//TO DO remove slice
+                let error:Option<string>;
+                if (response.statusText) {
+                    error = response.statusText;
+                }
+                else {
+                    error = null;
+                }
+                crawledDTO.push({linkId: singleCrawlableDTO.linkId, status, headers:headers_, body:body_.slice(0,1000), error});//TO DO remove slice
             }
             return crawledDTO;
         }
@@ -239,11 +246,16 @@ export async function executeCrawlQuery(crawlQuery:CrawlQuery):Promise<CrawledDT
 
 export function translateCrawledDTOToDBQueryDTO(hexCoder:HexCoder,crawledDTO:CrawledDTO):DBQueryDTO{
     if (isSingleCrawledDTO(crawledDTO)) {
-        const {linkId, status, headers, body} = crawledDTO;
-        return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body)}], SQLFunction: 'insert_into_contents'};
+        const {linkId, status, headers, body, error} = crawledDTO;
+        if (error) {
+            return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body), hex_error:hexCoder.encode(error)}], SQLFunction: 'insert_into_contents'};
+        }
+        else {
+            return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body),hex_error:null}], SQLFunction: 'insert_into_contents'};
+        }
     }
     else {
-        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:hexCoder.encode(crawledDTO.body)}));
+        const rows = crawledDTO.map((crawledDTO)=>({link_id: crawledDTO.linkId, status: crawledDTO.status, hex_content:hexCoder.encode(crawledDTO.body), hex_error:(crawledDTO.error)?hexCoder.encode(crawledDTO.error):null}));
         return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows, SQLFunction: 'insert_into_contents'};
     }
     

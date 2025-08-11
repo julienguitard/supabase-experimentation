@@ -32,6 +32,19 @@ export type HexCoder = {
     encode: (input: string) => string;
     decode: (hexString: string) => string;
 }
+
+export type Tokenizer = {
+    encode: (input: string) => number[];
+    decode: (tokens: number[]) => string;
+}
+
+export type Chunker<T> = {
+    listSlice: (input: T[]) => {start:number,end:number}[];
+}
+
+export type ChunkerFactory<T> = {
+    chunker: (input: T) => Chunker<T>;
+}
 // Shared TypeScript types will go here 
 export type User = {
     email: string;
@@ -86,6 +99,7 @@ export type LLMModel = {
     invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
 }
 
+
 export type SingleLLMResponseDTO = {
     response: string;
     response_type?: string;
@@ -127,4 +141,5 @@ export type ResponseDTO = {
     status: number;
     headers: Record<string, string>;
     body: string;
+    error?: string;
 }

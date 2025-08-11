@@ -58,7 +58,7 @@ BEGIN
         ON t.link_id = s.link_id AND t.created_at = s.created_at
         WHEN MATCHED THEN DO NOTHING
         WHEN NOT MATCHED BY TARGET THEN INSERT VALUES 
-        (gen_random_uuid(), NOW(), s.link_id, s.status, decode(s.hex_content, 'hex'))
+        (gen_random_uuid(), NOW(), s.link_id, s.status, decode(s.hex_content, 'hex'), decode(s.hex_error, 'hex'))
         RETURNING t.*
     )
     SELECT * FROM merged;
