@@ -36,15 +36,11 @@ export type HexCoder = {
 export type Tokenizer = {
     encode: (input: string) => number[];
     decode: (tokens: number[]) => string;
+    listSlice: (input: number[]) => {start:number,end:number}[];
+    applyListSlice: (input: number[],slicesList: {start:number,end:number}[]) => number[][];
+    chunkContent: (input:string)=>string[];
 }
 
-export type Chunker<T> = {
-    listSlice: (input: T[]) => {start:number,end:number}[];
-}
-
-export type ChunkerFactory<T> = {
-    chunker: (input: T) => Chunker<T>;
-}
 // Shared TypeScript types will go here 
 export type User = {
     email: string;

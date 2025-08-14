@@ -5,7 +5,7 @@ import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transforma
 import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
 import { AIClient, SingleLLMRequestDTO } from "../../packages/types/index.ts";
 import { invoke } from "./transformations/llmmodel-compilation.ts";
-import { createTokenizer } from "./context.ts";
+import { createTokenizer, createTextCoder, createTokenEncoder } from "./context.ts";
 
 
 export async function parseRequest(req:Request):RequestDTO{
@@ -284,11 +284,17 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
     }
     else {
         const llmResponseDTO:LLMResponseDTO = [];
-        const tokenizer = createTokenizer();
+        const tokenizer = createTokenizer(createTokenEncoder("gpt-4o"),createTextCoder());
         for (const llmRequestDTO of LLMRequestDTO) {
             const response = await invoke(llmRequestDTO);
-            console.log("response", response);//TO DO remove
-            console.log("tokens", tokenizer.encode(response));//TO DO remove
+            const chunks_content = tokenizer.chunkContent(response);
+            //console.log("response", response);//TO DO remove
+            //console.log("tokens", tokens);//TO DO remove
+            //console.log("response_", response_);//TO DO remove
+            //console.log("tokens length", tokens.length);//TO DO remove
+            //console.log("slicesList", slicesList);//TO DO remove
+            //console.log("chunks", chunks);//TO DO remove
+            console.log("chunks_content", chunks_content);//TO DO remove
             llmResponseDTO.push({response, metadata: llmRequestDTO.metadata});
         }
         return llmResponseDTO;

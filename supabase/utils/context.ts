@@ -1,4 +1,4 @@
-import type { Option, Env, BrowserlessClient, User, TextCoder, Browser, BrowserFactory, HexCoder, Chunker, Tokenizer } from "@types";
+import type { Option, Env, BrowserlessClient, User, TextCoder, Browser, BrowserFactory, HexCoder, Tokenizer } from "@types";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import tiktoken from 'npm:tiktoken';
@@ -101,19 +101,17 @@ export function createHexCoder(textCoder:TextCoder):HexCoder{
     return hexCoder;
 }
 
-export function createTokenizer(ctx:Env=Deno.env):Tokenizer{
-    const encoder = tiktoken.encoding_for_model("gpt-4o")
-    const encode: (input: string) => number[] = (input: string) => {
-      return encoder.encode(input);
-    };
-    const decode: (tokens: number[]) => string = (tokens: number[]) => {
-      return encoder.decode(tokens);
-    };
-
-    return {encode,decode};
+export function createTokenEncoder(model:string):ReturnType<typeof tiktoken.encoding_for_model>{
+    return tiktoken.encoding_for_model(model);
 }
 
-export function createChunker<T>(ctx:Env=Deno.env):Chunker<T>{
+export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding_for_model>,textCoder:TextCoder):Tokenizer{
+    const encode: (input: string) => number[] = (input: string) => {
+      return tokenEncoder.encode(input);
+    };
+    const decode: (tokens: number[]) => string = (tokens: number[]) => {
+      return textCoder.textDecoder.decode(tokenEncoder.decode(tokens));
+    };
     const listSlice:(input:T[])=>{start:number,end:number}[] = (input:T[])=>{
       const length:number = input.length;
       const slicesLength:number = Math.ceil(length/200);
@@ -123,7 +121,17 @@ export function createChunker<T>(ctx:Env=Deno.env):Chunker<T>{
       }
       return slicesList;
     }
-    return {listSlice};
+    const applyListSlice:(input:T[],slicesList:{start:number,end:number}[])=>T[][] = (input:T[],slicesList:{start:number,end:number}[])=>{
+      return slicesList.map(slice=>input.slice(slice.start,slice.end));
+    }
+    const chunkContent: (input:string)=>string[] = (input:string)=>{
+      const tokens = tokenEncoder.encode(input);
+      const slicesList = listSlice(tokens);
+      const chunks = applyListSlice(tokens,slicesList);
+      return chunks.map(chunk=>textCoder.textDecoder.decode(tokenEncoder.decode(chunk)));
+    }
+
+    return {encode,decode,listSlice,applyListSlice,chunkContent};
 }
 
 export function createAnthropicClient(ctx:Env=Deno.env):Anthropic{
