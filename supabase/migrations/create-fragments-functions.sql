@@ -1,4 +1,6 @@
-create or replace function insert_fragments() returns setof fragments language plpgsql security definer as $$
+drop function if exists insert_fragments;
+
+create function insert_fragments() returns setof fragments language plpgsql security invoker as $$
 begin  return query with merged as (
     merge into fragments t
     using tmp_fragments_insert s
@@ -6,7 +8,7 @@ begin  return query with merged as (
     and t.source_column = s.source_column
     and t.source_id = s.source_id
     when matched then do nothing
-    when not matched by target then insert values (gen_random_uuid(), now(), s.source_table, s.source_column, s.source_id)
+    when not matched by target then insert values (gen_random_uuid(), now(), s.source_table, s.source_column, s.source_id, auth.uid())
     returning t.*
 )
 delete from tmp_fragments_insert where true;

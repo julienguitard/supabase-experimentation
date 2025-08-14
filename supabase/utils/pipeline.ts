@@ -5,6 +5,7 @@ import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transforma
 import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
 import { AIClient, SingleLLMRequestDTO } from "../../packages/types/index.ts";
 import { invoke } from "./transformations/llmmodel-compilation.ts";
+import { createTokenizer } from "./context.ts";
 
 
 export async function parseRequest(req:Request):RequestDTO{
@@ -154,7 +155,7 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
         return {data, error};
     }
     catch (error) {
-        throw new Error('Error executing DB query');
+        throw new Error('Error executing DB query:' + error.message);
     }
 }
 
@@ -283,8 +284,11 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
     }
     else {
         const llmResponseDTO:LLMResponseDTO = [];
+        const tokenizer = createTokenizer();
         for (const llmRequestDTO of LLMRequestDTO) {
             const response = await invoke(llmRequestDTO);
+            console.log("response", response);//TO DO remove
+            console.log("tokens", tokenizer.encode(response));//TO DO remove
             llmResponseDTO.push({response, metadata: llmRequestDTO.metadata});
         }
         return llmResponseDTO;
@@ -316,6 +320,10 @@ export function formatToResponseDTO(res:DBResponseDTO<T>):ResponseDTO{
     else {
         return {status: 200, headers: {'Content-Type': 'application/json'}, body: data};
     }
+}
+
+export function createResponseDTOFromAuthenticationError(error:Error):ResponseDTO{
+    return {status: 401, headers: {'Content-Type': 'application/json'}, body: error.message };
 }
 
 export function createResponse(res:ResponseDTO):Response{

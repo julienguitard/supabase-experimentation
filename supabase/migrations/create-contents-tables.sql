@@ -12,15 +12,17 @@ create table public.contents (
   status int8 null, -- Status of the curl request (e.g., HTTP status code or custom status)
   content bytea null, -- Content or response body from the curl request
   error bytea null, -- Error message from the curl request
+  user_id uuid not null, -- User ID of the content owner
   constraint contents_pkey primary key (id), -- Primary key constraint on id
-  constraint contents_link_id_fkey foreign KEY (link_id) references links (id) -- Foreign key constraint referencing links table
+  constraint contents_link_id_fkey foreign key (link_id) references links (id), -- Foreign key constraint referencing links table
+  constraint contents_user_id_fkey foreign key (user_id) references auth.users (id)
 ) TABLESPACE pg_default;
 
 drop table if exists public.tmp_contents_insert;
 
 create table tmp_contents_insert as (
   select
-    id, created_at, link_id, status, '0afe' as hex_content, '0afe' as hex_error
+    id, created_at, link_id, status, '0afe' as hex_content, '0afe' as hex_error, user_id
   from
     contents
   where

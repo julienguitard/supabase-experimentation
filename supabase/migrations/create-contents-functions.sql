@@ -1,71 +1,73 @@
 drop function if exists insert_http_into_contents;
 
 
-CREATE FUNCTION insert_http_into_contents() 
-RETURNS SETOF contents 
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
+create function insert_http_into_contents() 
+returns setof contents 
+language plpgsql
+security invoker
+as $$
+begin
     -- Perform the merge operation to insert HTTP responses into contents table
-    RETURN QUERY
-    WITH inserted AS (
-        INSERT INTO contents (
+    return query
+    with inserted as (
+        insert into contents (
             id, 
             created_at, 
             link_id, 
             status, 
-            content
+            content,
+            user_id,
         )
-        SELECT
-            gen_random_uuid() AS id,         -- Generate a new UUID for the log entry
-            NOW() AS created_at,             -- Current timestamp for log creation
+        select
+            gen_random_uuid() as id,         -- Generate a new UUID for the log entry
+            now() as created_at,             -- Current timestamp for log creation
             link_id,                         -- The ID of the link being checked
-            CAST(status AS BIGINT),          -- HTTP status as BIGINT
-            CAST(content AS bytea) AS content -- HTTP response content as TEXT
-        FROM (
-            SELECT
+            cast(status as bigint),          -- HTTP status as BIGINT
+            cast(content as bytea) as content, -- HTTP response content as TEXT
+            auth.uid() as user_id
+        from (
+            select
                 link_id,
                 (http_get(url)).*            -- Perform HTTP GET and expand result columns (status, content, etc.)
-            FROM (
-                SELECT
-                    id::uuid AS link_id,     -- Get the link's UUID
+            from (
+                select
+                    id::uuid as link_id,     -- Get the link's UUID
                     url                      -- Get the link's URL
-                FROM
+                from
                     links_to_crawl
-                ORDER BY
+                order by
                     random()                 -- Randomize the order of links
-                LIMIT 5                      -- Limit to 5 links per run
-            ) AS sub_links
-        ) AS sub_http
+                limit 5                      -- Limit to 5 links per run
+            ) as sub_links
+        ) as sub_http
     )
-    SELECT * FROM inserted;
-END;
+    select * from inserted;
+end;
 $$;
 
 drop function if exists insert_into_contents;
 
-CREATE  FUNCTION insert_into_contents() RETURNS SETOF contents
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
+create  function insert_into_contents() returns setof contents
+language plpgsql
+security invoker
+as $$
+begin
     -- Perform the merge operation
-    RETURN QUERY
-    WITH merged AS (
-        MERGE INTO contents t
-        USING tmp_contents_insert s
-        ON t.link_id = s.link_id AND t.created_at = s.created_at
-        WHEN MATCHED THEN DO NOTHING
-        WHEN NOT MATCHED BY TARGET THEN INSERT VALUES 
-        (gen_random_uuid(), NOW(), s.link_id, s.status, decode(s.hex_content, 'hex'), decode(s.hex_error, 'hex'))
-        RETURNING t.*
+    return query
+    with merged as (
+        merge into contents t
+        using tmp_contents_insert s
+        on t.link_id = s.link_id and t.created_at = s.created_at
+        when matched then do nothing
+        when not matched by target then insert values 
+        (gen_random_uuid(), now(), s.link_id, s.status, decode(s.hex_content, 'hex'), decode(s.hex_error, 'hex'), auth.uid())
+        returning t.*
     )
-    SELECT * FROM merged;
+    select * from merged;
     
     -- Clean up the tmp table
-    DELETE FROM tmp_contents_insert WHERE TRUE;
-END;
+    delete from tmp_contents_insert where true;
+end;
 $$;
 
 

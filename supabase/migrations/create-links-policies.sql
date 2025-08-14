@@ -1,36 +1,47 @@
-create policy "all_users"
+alter table links enable row level security;
+
+-- Check if the user is the owner of the link
+create policy "authenticated_all"
 on "public"."links"
-as PERMISSIVE
-for ALL
+as permissive
+for all
 to public
 using (
-TRUE
-);
+(select auth.uid() as user_id) = user_id 
+) with check ((select auth.uid() as user_id) = user_id); 
 
+alter table tmp_links_insert enable row level security;
 
-create policy "all_users"
+-- Check if the user is authenticated
+create policy "authenticated_all"
 on "public"."tmp_links_insert"
-as PERMISSIVE
-for ALL
+as permissive
+for all
 to public
 using (
-TRUE
-);
+(select auth.uid() as user_id) is not null
+) with check ((select auth.uid() as user_id) is not null);
 
-create policy "all_users"
+alter table tmp_links_update enable row level security;
+
+-- Check if the user is authenticated
+create policy "authenticated_all"
 on "public"."tmp_links_update"
-as PERMISSIVE
-for ALL
+as permissive
+for all
 to public
 using (
-TRUE
-);
+(select auth.uid() as user_id) is not null
+) with check ((select auth.uid() as user_id) is not null);
 
-create policy "all_users"
+alter table tmp_links_delete enable row level security;
+
+-- Check if the user is authenticated
+create policy "authenticated_all"
 on "public"."tmp_links_delete"
-as PERMISSIVE
-for ALL
+as permissive
+for all
 to public
 using (
-TRUE
-);
+(select auth.uid() as user_id) is not null
+) with check ((select auth.uid() as user_id) is not null);

@@ -1,10 +1,15 @@
-CREATE OR REPLACE VIEW links_to_crawl AS (
+-- Drop views
+drop view if exists links_to_crawl cascade;
+
+-- Create view to find links that haven't been crawled yet
+create view links_to_crawl with (security_invoker = on) as (
 -- Query to find links that haven't been crawled yet
 select
   id,
   created_at,
   url,
-  category
+  category,
+  user_id
 from
   (
     select
@@ -12,6 +17,7 @@ from
       l.created_at,
       l.url,
       l.category,
+      l.user_id,
       case
         when c.id is not null then 1
         else 0
@@ -24,22 +30,25 @@ from
         from
           contents
         where
-          status = 200
+          status = 200 -- Only consider successful HTTP responses
           and (
-            EXTRACT(
-              EPOCH
+            extract(
+              epoch
               from
-                NOW()
-            ) - EXTRACT(
-              EPOCH
+                now()
+            ) - extract(
+              epoch
               from
                 (created_at)
             )
-          ) < 86400
+          ) < 86400 -- Only consider links that haven't been crawled in the last 24 hours
       ) c using (id)
   ) as uncrawled_links
 where
-  crawled = 0);
+  crawled = 0 -- Only consider links that haven't been crawled yet
+);
 
-CREATE OR REPLACE VIEW tmp_links_to_crawl AS (
-    SELECT * FROM links_to_crawl ORDER BY RANDOM() LIMIT 1);--TODO  remove limit
+-- Create a shorter view to find a random link that hasn't been crawled yet, for scalability
+create view tmp_links_to_crawl with (security_invoker = on) as (
+    select * from links_to_crawl order by random() limit 1 -- Todo  remove limit
+);

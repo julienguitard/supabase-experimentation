@@ -3,7 +3,7 @@ import { createAuthenticatedSupabaseClient } from "../../utils/context.ts";
 import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
 
 
-const edgeFunction: string = 'update-links';
+const edgeFunction: string = 'vectorize-links';
 
 Deno.serve(async (req:Request)=>{
   try {

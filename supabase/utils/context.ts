@@ -18,6 +18,21 @@ export function createSupabaseClient(ctx:Env=Deno.env):SupabaseClient{
     const supabaseClient: ReturnType<typeof createClient> = createClient(supabaseUrl, supabaseAnonKey);
     return supabaseClient
   }
+
+  export function createAuthenticatedSupabaseClient(ctx:Env=Deno.env, req:Request):SupabaseClient{
+    const supabaseUrl: string = ctx.get('SUPABASE_URL') as string;
+    const supabaseAnonKey: string = ctx.get('SUPABASE_ANON_KEY') as string;
+    const supabaseClient: ReturnType<typeof createClient> = createClient(
+      supabaseUrl, 
+      supabaseAnonKey,
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+  );
+    return supabaseClient
+  }
   
 
 export function createBrowserlessClient(ctx:Env=Deno.env):BrowserlessClient{
@@ -87,11 +102,12 @@ export function createHexCoder(textCoder:TextCoder):HexCoder{
 }
 
 export function createTokenizer(ctx:Env=Deno.env):Tokenizer{
+    const encoder = tiktoken.encoding_for_model("gpt-4o")
     const encode: (input: string) => number[] = (input: string) => {
-      return tiktoken.encode(input);
+      return encoder.encode(input);
     };
     const decode: (tokens: number[]) => string = (tokens: number[]) => {
-      return tiktoken.decode(tokens);
+      return encoder.decode(tokens);
     };
 
     return {encode,decode};

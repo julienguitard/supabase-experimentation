@@ -1,9 +1,10 @@
-create or replace view denormalized_contents as (
+create or replace view denormalized_contents with (security_invoker = on) as (
   select
     c.id,
     c.created_at,
     c.status,
     c.content,
+    c.user_id,
     l.url,
     l.category
   from
@@ -11,13 +12,14 @@ create or replace view denormalized_contents as (
     left join links l on c.link_id = l.id
 );
 
-create or replace view contents_to_summarize as (
+create or replace view contents_to_summarize with (security_invoker = on) as (
   -- Query to find contents that haven't been summarized yet
   select
     id,
     created_at,
-    encode(content,'hex') AS hex_content,
-    category
+    encode(content,'hex') as hex_content,
+    category,
+    user_id
   from
     (
       select
@@ -25,6 +27,7 @@ create or replace view contents_to_summarize as (
         c.created_at,
         c.content,
         c.category,
+        c.user_id,
         case
           when s.id is not null then 1
           else 0
@@ -49,13 +52,13 @@ create or replace view contents_to_summarize as (
     summarized = 0
 );
 
-create or replace view tmp_contents_to_summarize as (
+create or replace view tmp_contents_to_summarize with (security_invoker = on) as (
   select
     *
   from
     contents_to_summarize
   order by
-    RANDOM()
+    random()
   limit
     2
 );
