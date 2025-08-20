@@ -1,4 +1,9 @@
-create or replace view denormalized_contents with (security_invoker = on) as (
+drop view if exists tmp_contents_to_summarize cascade;
+drop view if exists contents_to_summarize cascade;
+drop view if exists denormalized_contents cascade;
+
+
+create view denormalized_contents with (security_invoker = on) as (
   select
     c.id,
     c.created_at,
@@ -12,7 +17,7 @@ create or replace view denormalized_contents with (security_invoker = on) as (
     left join links l on c.link_id = l.id
 );
 
-create or replace view contents_to_summarize with (security_invoker = on) as (
+create view contents_to_summarize with (security_invoker = on) as (
   -- Query to find contents that haven't been summarized yet
   select
     id,
@@ -52,7 +57,7 @@ create or replace view contents_to_summarize with (security_invoker = on) as (
     summarized = 0
 );
 
-create or replace view tmp_contents_to_summarize with (security_invoker = on) as (
+create view tmp_contents_to_summarize with (security_invoker = on) as (
   select
     *
   from

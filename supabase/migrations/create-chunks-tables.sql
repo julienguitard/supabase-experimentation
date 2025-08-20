@@ -1,8 +1,11 @@
+drop table if exists tmp_chunks_insert cascade;
+drop table if exists chunks cascade;
+
 create table chunks (
-    id int8 not null default 0,
+    id uuid not null default gen_random_uuid(),
     created_at timestamp with time zone default current_timestamp,
     fragment_id uuid not null,
-    content bytea not null,
+    chunk bytea not null,
     start_ int8 not null,
     end_ int8 not null,
     user_id uuid not null,
@@ -13,6 +16,6 @@ create table chunks (
 
 create table tmp_chunks_insert as (
     select
-        id, created_at, fragment_id, '0afe' as hex_content, start_, end_, user_id
+        id, created_at, fragment_id, '0afe' as hex_chunk, start_, end_, user_id
     from chunks where false
 );

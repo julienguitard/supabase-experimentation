@@ -1,14 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import {  createAuthenticatedSupabaseClient } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
+import { createAuthenticatedSupabaseClient } from "../../utils/context.ts";
+import { parseRequest, createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
 
-
-
-const edgeFunction: string = 'check-table';
+const edgeFunction: string = 'select-row';
 
 Deno.serve(async (req:Request)=>{
   try {
     const supabaseClient = createAuthenticatedSupabaseClient(Deno.env, req);
+    const {data: {user}} = await supabaseClient.auth.getUser();
+    console.log(`[${Date.now()}] user`, user);
+
   // Step 01: Parse the incoming request
     console.log(`[${Date.now()}] Step 01: Parsing incoming request...`);
     const parsedRequest = await parseRequest(req);
@@ -16,7 +17,7 @@ Deno.serve(async (req:Request)=>{
     
   // Step 02: Translate the parsed request to database query DTO
     console.log(`[${Date.now()}] Step 02: Translating to database query DTO...`);
-    const dbQueryDTO = translateToDBQueryDTO(parsedRequest, edgeFunction);
+    const dbQueryDTO = translateRequestDTOToDBQueryDTO(parsedRequest, edgeFunction);
     console.log(`[${Date.now()}] Step 02 complete: Database query DTO:`, dbQueryDTO);
     
   // Step 03: Compile the database query DTO to actual database query

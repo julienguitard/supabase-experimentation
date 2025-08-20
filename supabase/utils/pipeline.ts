@@ -1,9 +1,9 @@
 import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, TextCoder, HexCoder, Browser, BrowserFactory, CrawlQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI} from "@types";
-import { isSingleCrawlableDTO, isSingleCrawledDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO } from "../../packages/types/guards.ts";
-import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO } from "./transformations/dbquerydto-translation.ts";
+import { isListOfTokenizableDTOWithHexFragment, isSingleCrawlableDTO, isSingleCrawledDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment } from "../../packages/types/guards.ts";
+import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
-import { AIClient, SingleLLMRequestDTO } from "../../packages/types/index.ts";
+import { AIClient, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor } from "../../packages/types/index.ts";
 import { invoke } from "./transformations/llmmodel-compilation.ts";
 import { createTokenizer, createTextCoder, createTokenEncoder } from "./context.ts";
 
@@ -39,7 +39,7 @@ export async function parseRequest(req:Request):RequestDTO{
     return {method, url:url.pathname, urlSearchParams, authHeader, body};
 }
 
-export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string):DBQueryDTO{
+export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string):DBQueryDTO{
     const {method, urlSearchParams, authHeader} = reqDTO;
     let statement:string;
     if (step){
@@ -48,84 +48,66 @@ export function translateToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, st
     else {
         statement = edgeFunctionToStatement(edgeFunction);
     }
-    switch (statement){
-        case  'select' : {
-            const {table, id} = urlSearchParams;
-            if (id) {
-                return {statement,table, id};
-            }
-            else if (table) {
-                return {statement,table};
+    if (statement === 'select'){
+        if (urlSearchParams.table){
+            if (urlSearchParams.id){
+                return {statement, table: urlSearchParams.table, id: urlSearchParams.id};
             }
             else {
-                throw new Error('No table or id provided');
+                return {statement, table: urlSearchParams.table};
             }
         }
-        case 'insert' : {
-            const {table, id} = urlSearchParams;
-            let cacheTable:Option<string>;
-            let SQLFunction:Option<string>;
-            if (step){
-                cacheTable = edgeFunctionToCacheTable(edgeFunction,step);
-                SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
-            }
-            else {
-                cacheTable = edgeFunctionToCacheTable(edgeFunction);
-                SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
-            }
-            const rows = reqDTO.body;
-            if (id) {
-                throw new Error('Inserting with an id is not allowed');
-            }
-            else if (table) {
-                return {statement,table, rows, cacheTable, SQLFunction};
-            }
-            else {
-                return {statement, rows, cacheTable, SQLFunction};
-            }
+        else {
+            const table = edgeFunctionToTable(edgeFunction);
+            return {statement, table};
         }
-        case 'update' : {
-            const {table, id} = urlSearchParams;
-            const cacheTable = edgeFunctionToCacheTable(edgeFunction);
-            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
-            const rows = reqDTO.body;
-            if (id) {
-                throw new Error('Inserting with an id is not allowed');
-            }
-            else if (table) {
-                return {statement,table, rows, cacheTable, SQLFunction};
-            }
-            else {
-                return {statement, rows, cacheTable, SQLFunction};
-            }
+    }
+    else {
+        const {table, id} = urlSearchParams;
+        let cacheTable:Option<string>;
+        let SQLFunction:Option<string>;
+        if (step){
+            cacheTable = edgeFunctionToCacheTable(edgeFunction,step);
+            SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
         }
-        case 'delete' : {
-            const {table, id} = urlSearchParams;
-            const cacheTable = edgeFunctionToCacheTable(edgeFunction);
-            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
-            const rows = reqDTO.body;
-            if (id) {
-                throw new Error('Inserting with an id is not allowed');
-            }
-            else if (table) {
-                return {statement,table, rows, cacheTable, SQLFunction};
-            }
-            else {
-                return {statement, rows, cacheTable, SQLFunction};
+        else {
+            cacheTable = edgeFunctionToCacheTable(edgeFunction);
+            SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
+        }   
+        const rows = reqDTO.body;
+        if (id) {
+            throw new Error('Inserting with an id is not allowed');
+        }
+        else if (table) {
+            return {statement,table, rows, cacheTable, SQLFunction};
+        }
+        else {
+            return {statement, rows, cacheTable, SQLFunction};
+        }
+    }
+}
+
+export function translateDBResponseDTOToDBQueryDTO(dbResponseDTO:DBResponseDTO<T>, edgeFunction:string, step?:string):DBQueryDTO{
+    switch(edgeFunction){
+        case 'check-fragments': {
+            switch(step){
+                case 'insert-fragments': {
+                    return {statement:'insert', 
+                        cacheTable: 'tmp_fragments_insert',
+                        rows: dbResponseDTO.data.map((row)=>{return row}), 
+                        SQLFunction: 'insert_into_fragments'}
+                }
+                default: {
+                    throw new Error('Wrong step');
+                }
             }
         }
         default: {
-            const {table, id} = urlSearchParams;
-            if (id) {
-                return {statement,table, id};
-            }
-            else {
-                return {statement,table};
-            }
+            throw new Error('Wrong edge function');
         }
-
     }
 }
+
 
 export function compileToDBQuery(client:Client,DBqueryDTO:DBQueryDTO):DBQuery<Client,T>{
     const {statement, table, id, cacheTable, rows,SQLFunction} = DBqueryDTO;
@@ -140,6 +122,7 @@ export function compileToDBQuery(client:Client,DBqueryDTO:DBQueryDTO):DBQuery<Cl
     }
     else if  (rows && cacheTable && SQLFunction) {
         // Thunk approach because of the way supabase works otherwise a SQL string would fit better
+        console.log('Executing insert in cache table query',cacheTable, SQLFunction,rows);
         return {client, 
             query: ()=>executeInsertInCacheTableQuery(client, cacheTable, rows, SQLFunction)
         }
@@ -151,6 +134,7 @@ export function compileToDBQuery(client:Client,DBqueryDTO:DBQueryDTO):DBQuery<Cl
 
 export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>{
     try {
+        console.log('Executing DB query',dbQuery.query);
         const {data, error} = await dbQuery.query();
         return {data, error};
     }
@@ -158,6 +142,7 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
         throw new Error('Error executing DB query:' + error.message);
     }
 }
+
 
 export function formatToCrawlableDTO(dbResponseDTO:DBResponseDTO<T>):CrawlableDTO{
     const {data, error} = dbResponseDTO;
@@ -262,6 +247,44 @@ export function translateCrawledDTOToDBQueryDTO(hexCoder:HexCoder,crawledDTO:Cra
     
 }
 
+export function formatToTokenizableDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):TokenizableDTO{
+    const {data, error} = dbResponseDTO;
+    if (error) {
+        throw new Error('Error formatting to tokenizable DTO');
+    }
+    else {
+        return data.map((d)=>({fragment_id: d.id, hex_fragment: d.hex_fragment}));
+    }
+}
+
+export function compileToTokenizerExecutor(tokenizer:Tokenizer,tokenizableDTO:TokenizableDTO):TokenizerExecutor{
+    return {tokenizer, tokenizableDTO};
+}
+
+export function executeTokenizerExecutor(tokenizerExecutor:TokenizerExecutor):Option<TokenizedDTO>{
+    const {tokenizer, tokenizableDTO} = tokenizerExecutor;
+    if (isSingleTokenizableDTOWithHexFragment(tokenizableDTO)) {
+        return tokenizer.chunkHexContent(tokenizableDTO.hex_fragment,{fragment_id: tokenizableDTO.fragment_id});
+    }
+    else if (isListOfTokenizableDTOWithHexFragment(tokenizableDTO)) {
+        return tokenizableDTO.flatMap((t)=>tokenizer.chunkHexContent(t.hex_fragment,{fragment_id: t.fragment_id}));
+    }
+    else {
+        return null;
+    }
+}
+
+export function translateTokenizedDTOToDBQueryDTO(hexCoder:HexCoder,tokenizedDTO:TokenizedDTO):DBQueryDTO{
+    if (isSingleTokenizedDTOWithHexFragment(tokenizedDTO)) {
+        const {fragment_id, hex_chunk, start_, end_} = tokenizedDTO;
+        return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows: [{fragment_id, hex_chunk, start_, end_}], SQLFunction: 'insert_into_chunks'};
+    }
+    else {
+        const rows = tokenizedDTO.map((t)=>({fragment_id: t.fragment_id, hex_chunk: t.hex_chunk, start_: t.start_, end_: t.end_}));
+        return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows, SQLFunction: 'insert_into_chunks'};
+    }
+}
+
 export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):Promise<LLMRequestDTO>{
     const {data, error} = dbResponseDTO;
     if (error) {
@@ -284,17 +307,8 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
     }
     else {
         const llmResponseDTO:LLMResponseDTO = [];
-        const tokenizer = createTokenizer(createTokenEncoder("gpt-4o"),createTextCoder());
         for (const llmRequestDTO of LLMRequestDTO) {
             const response = await invoke(llmRequestDTO);
-            const chunks_content = tokenizer.chunkContent(response);
-            //console.log("response", response);//TO DO remove
-            //console.log("tokens", tokens);//TO DO remove
-            //console.log("response_", response_);//TO DO remove
-            //console.log("tokens length", tokens.length);//TO DO remove
-            //console.log("slicesList", slicesList);//TO DO remove
-            //console.log("chunks", chunks);//TO DO remove
-            console.log("chunks_content", chunks_content);//TO DO remove
             llmResponseDTO.push({response, metadata: llmRequestDTO.metadata});
         }
         return llmResponseDTO;

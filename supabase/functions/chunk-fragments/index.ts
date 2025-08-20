@@ -1,14 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import type { BrowserFactory, BrowserlessClient} from '@types';
-import { createBrowserFactory, createBrowserlessClient, createTextCoder, createHexCoder, createAuthenticatedSupabaseClient } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateCrawledDTOToDBQueryDTO, formatToCrawlableDTO, compileToCrawlQuery, executeCrawlQuery, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
+import { createTextCoder, createHexCoder,createTokenEncoder, createTokenizer, createAuthenticatedSupabaseClient } from "../../utils/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateDBResponseDTOToDBQueryDTO, createResponseDTOFromAuthenticationError, formatToTokenizableDTO, compileToTokenizerExecutor, executeTokenizerExecutor, translateTokenizedDTOToDBQueryDTO } from "../../utils/pipeline.ts";
 
 
-const browserFactory: BrowserFactory = createBrowserFactory();
-const browserlessClient: BrowserlessClient = createBrowserlessClient();
 const textCoder = createTextCoder();
 const hexCoder = createHexCoder(textCoder);
-const edgeFunction: string = 'fetch-links';
+const tokenEncoder = createTokenEncoder("gpt-4o");
+const tokenizer = createTokenizer(tokenEncoder,textCoder,hexCoder);
+const edgeFunction: string = 'chunk-fragments';
 
 Deno.serve(async (req:Request)=>{
   try {
@@ -23,7 +22,7 @@ Deno.serve(async (req:Request)=>{
     
   // Step 02: Translate the parsed request to database query DTO
     console.log(`[${Date.now()}] Step 02: Translating to database query DTO...`);
-    const dbQueryDTO = translateRequestDTOToDBQueryDTO(parsedRequest, edgeFunction, 'select-links');
+    const dbQueryDTO = translateRequestDTOToDBQueryDTO(parsedRequest, edgeFunction, 'select-fragments');
     console.log(`[${Date.now()}] Step 02 complete: Database query DTO:`, dbQueryDTO);
     
   // Step 03: Compile the database query DTO to actual database query
@@ -34,28 +33,27 @@ Deno.serve(async (req:Request)=>{
   // Step 04: Execute the database query
     console.log(`[${Date.now()}] Step 04: Executing database query...`);
     const queryResult = await executeDBQuery(dbQuery);
-    console.log(`[${Date.now()}] Step 04 complete: Query result:`, queryResult);
-
-  // Step 05: Format the result to crawlable DTO
-    console.log(`[${Date.now()}] Step 05: Formatting result to crawlable DTO...`);
-    const crawlableDTO = formatToCrawlableDTO(queryResult);
-    console.log(`[${Date.now()}] Step 05 complete: Crawlable DTO:`, crawlableDTO);
-
-    //Step 06: Compile the crawlable DTO to crawl query
-    console.log(`[${Date.now()}] Step 06: Compiling crawl query...`);
-    //const crawlQuery = compileToCrawlQuery(crawlableDTO, browserlessClient);
-    const crawlQuery = compileToCrawlQuery(crawlableDTO,browserlessClient);
-    console.log(`[${Date.now()}] Step 06 complete: Crawl query:`, crawlQuery);
-
-    //Step 07: Execute the crawal query
-    console.log(`[${Date.now()}] Step 07: Executing crawl query...`);
-    const crawledDTO = await executeCrawlQuery(crawlQuery);
-    console.log(`[${Date.now()}] Step 07 complete: Crawled DTO:`, crawledDTO);
+    console.log(`[${Date.now()}] Step 04 complete: Query result:`, queryResult)
 
 
-  // Step 08: Translate the crawled DTO to database query DTO
-    console.log(`[${Date.now()}] Step 08: Translating crawled DTO to database query DTO...`);
-    const dbQueryDTO2 = translateCrawledDTOToDBQueryDTO(hexCoder,crawledDTO);
+  // Step 05: Format the query result to tokenizable DTO
+    console.log(`[${Date.now()}] Step 05: Formatting query result to tokenizable DTO...`);
+    const tokenizableDTO = formatToTokenizableDTO(hexCoder,queryResult);
+    console.log(`[${Date.now()}] Step 05 complete: Tokenizable DTO:`, tokenizableDTO);
+
+  // Step 06: Compile the tokenizable DTO to tokenizer executor
+    console.log(`[${Date.now()}] Step 06: Compiling tokenizable DTO to tokenizer executor...`);
+    const tokenizerExecutor = compileToTokenizerExecutor(tokenizer,tokenizableDTO);
+    console.log(`[${Date.now()}] Step 06 complete: Tokenizer executor:`, tokenizerExecutor);
+
+  // Step 07: Execute the tokenizer executor
+    console.log(`[${Date.now()}] Step 07: Executing tokenizer executor...`);
+    const tokenizedDTO = executeTokenizerExecutor(tokenizerExecutor);
+    console.log(`[${Date.now()}] Step 07 complete: Tokenized DTO:`, tokenizedDTO);
+
+  // Step 08: Translate the tokenized DTO to database query DTO
+    console.log(`[${Date.now()}] Step 08: Translating tokenized DTO to database query DTO...`);
+    const dbQueryDTO2 = translateTokenizedDTOToDBQueryDTO(hexCoder,tokenizedDTO);
     console.log(`[${Date.now()}] Step 08 complete: Database query DTO:`, dbQueryDTO2);
 
   // Step 09: Compile the database query DTO to actual database query
@@ -69,14 +67,14 @@ Deno.serve(async (req:Request)=>{
     console.log(`[${Date.now()}] Step 09 complete: Query result:`, queryResult2);
 
   // Step 11: Format the result to response DTO
-    console.log(`[${Date.now()}] Step 05: Formatting result to response DTO...`);
+    console.log(`[${Date.now()}] Step 10: Formatting result to response DTO...`);
     const responseDTO = formatToResponseDTO(queryResult2);
-    console.log(`[${Date.now()}] Step 05 complete: Response DTO:`, responseDTO);
+    console.log(`[${Date.now()}] Step 11 complete: Response DTO:`, responseDTO);
     
   // Step 12: Create and return the final response
-    console.log(`[${Date.now()}] Step 06: Creating final response...`);
+    console.log(`[${Date.now()}] Step 12: Creating final response...`);
     const finalResponse = createResponse(responseDTO);
-    console.log(`[${Date.now()}] Step 06 complete: Final response created`);
+    console.log(`[${Date.now()}] Step 11 complete: Final response created`);
     return finalResponse;
   }
   catch (error) {

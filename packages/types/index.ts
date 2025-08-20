@@ -37,13 +37,15 @@ export type Tokenizer = {
     encode: (input: string) => number[];
     decode: (tokens: number[]) => string;
     listSlice: (input: number[]) => {start:number,end:number}[];
-    applyListSlice: (input: number[],slicesList: {start:number,end:number}[]) => number[][];
-    chunkContent: (input:string)=>string[];
+    applyListSlice: (input: number[],slicesList: {start:number,end:number}[]) => {chunk_:number[],start_:number,end_:number}[];
+    chunkContent: (input:string)=>{chunk:string,start_:number,end_:number}[];
+    chunkHexContent: (input:string,x?:Record<string,any>)=>{x,chunk:string,start_:number,end_:number}[];
 }
 
 // Shared TypeScript types will go here 
 export type User = {
     email: string;
+    user_id: string;
 }
 
 export type Message<T> = {
@@ -76,6 +78,43 @@ export type CrawlQuery = {
 }
 
 export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
+
+export type SingleTokenizableDTOWithFragment = {
+    fragment_id: string,
+    fragment:string
+}
+
+export type SingleTokenizableDTOWithHexFragment = {
+    fragment_id: string,
+    hex_fragment:string
+}
+
+export type SingleTokenizableDTO = SingleTokenizableDTOWithFragment | SingleTokenizableDTOWithHexFragment;
+
+export type TokenizableDTO = OneOrMany<SingleTokenizableDTO>;
+
+export type TokenizerExecutor = {
+    tokenizer: Tokenizer;
+    tokenizableDTO: TokenizableDTO;
+}
+
+export type SingleTokenizedDTOWithFragment = {
+    fragment_id: string,
+    chunk:string,
+    start_:number,
+    end_:number
+}
+
+export type SingleTokenizedDTOWithHexFragment = {
+    fragment_id: string;
+    hex_chunk:string,
+    start_:number,
+    end_:number
+}
+
+export type SingleTokenizedDTO = SingleTokenizedDTOWithFragment | SingleTokenizedDTOWithHexFragment;
+
+export type TokenizedDTO = OneOrMany<SingleTokenizedDTO>;
 
 export type SingleLLMRequestDTO = {
     model: string;

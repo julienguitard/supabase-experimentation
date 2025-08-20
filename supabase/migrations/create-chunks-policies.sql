@@ -12,4 +12,4 @@ alter table tmp_chunks_insert enable row level security;
 create policy "authenticated_all" on tmp_chunks_insert
 for all
 to public
-using ((select auth.uid() as user_id) = user_id);
+using ((select auth.uid() as user_id) IS NOT NULL);

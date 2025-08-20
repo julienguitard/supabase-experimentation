@@ -1,8 +1,12 @@
 import type { ContentsRowDTO, Option, SingleCrawledDTO, HexCoder } from "@types";
 import { createTextCoder, createHexCoder } from "../context.ts";
+import { Tokenizer } from "../../../packages/types/index.ts";
 
 export function edgeFunctionToStatement(edgeFunction:string,step?:string):string{
-    if (edgeFunction.includes('insert')){
+    if (edgeFunction.includes('select')){
+        return 'select';
+    }
+    else if (edgeFunction.includes('insert')){
         return 'insert';
     }
     else if (edgeFunction.includes('update')){
@@ -11,30 +15,26 @@ export function edgeFunctionToStatement(edgeFunction:string,step?:string):string
     else if (edgeFunction.includes('delete')){
         return 'delete';
     }
-    else if (edgeFunction.includes('fetch')){
-        if (step === 'select-links'){
-            return 'select';
-        }
-        else if (step === 'fetch-contents'){
-            return 'insert';
-        }
-        else {
-            return 'select';
-        }
-    }
-    else if (edgeFunction.includes('summarize')){
-        if (step === 'select-contents'){
-            return 'select';
-        }
-        else if (step === 'summarize-contents'){
-            return 'insert';
-        }
-        else {
-            return 'insert';
-        }
+    else if (step && step.includes('select')){
+        return 'select';
     }
     else {
-        return 'select';
+        return 'insert'
+    }
+}
+
+export function edgeFunctionToTable(edgeFunction:string,step?:string):Option<string>{
+    switch (edgeFunction){
+        case 'fetch-links':
+            return 'tmp_links_to_crawl';
+        case 'summarize-links':
+            return 'tmp_contents_to_summarize';
+        case 'check-fragments':
+            return 'tmp_fragments_to_check';
+        case 'chunk-fragments':
+            return 'tmp_fragments_to_chunk_with_content';
+        default:
+            return null;
     }
 }
 
@@ -47,16 +47,15 @@ export function edgeFunctionToCacheTable(edgeFunction:string,step?:string):Optio
         case 'delete-links':
             return 'tmp_links_delete';
         case 'fetch-links':
-            if (step === 'fetch-contents'){
-                return 'tmp_contents_insert';
-            }
-            else {
-                return 'tmp_contents_insert';
-            }
+            return 'tmp_contents_insert';
         case 'insert-contents':
             return 'tmp_contents_insert';
         case 'insert-summaries':
             return 'tmp_summaries_insert';
+        case 'check-fragments':
+            return 'tmp_fragments_insert';
+        case 'chunk-fragments':
+            return 'tmp_chunks_insert';
         default:
             return null;
     }
@@ -71,12 +70,7 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
         case 'delete-links':
             return 'delete_into_links';
         case 'fetch-links':
-            if (step === 'fetch-contents'){
-                return 'insert_into_contents';
-            }
-            else {
-                return 'insert_into_contents';
-            }
+            return 'insert_into_contents';
         case 'insert-contents':
             return 'tmp_contents_insert';
         case 'insert-summaries':
@@ -96,3 +90,4 @@ export function translateSingleCrawledDTOToContentsRowDTO(
     hex_content: hexCoder.encode(crawledDTO.content),
   };
 }
+

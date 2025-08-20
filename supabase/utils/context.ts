@@ -19,7 +19,7 @@ export function createSupabaseClient(ctx:Env=Deno.env):SupabaseClient{
     return supabaseClient
   }
 
-  export function createAuthenticatedSupabaseClient(ctx:Env=Deno.env, req:Request):SupabaseClient{
+  export function createAuthenticatedSupabaseClient(ctx:Env=Deno.env, req:Request):Promise<SupabaseClient>{
     const supabaseUrl: string = ctx.get('SUPABASE_URL') as string;
     const supabaseAnonKey: string = ctx.get('SUPABASE_ANON_KEY') as string;
     const supabaseClient: ReturnType<typeof createClient> = createClient(
@@ -31,7 +31,7 @@ export function createSupabaseClient(ctx:Env=Deno.env):SupabaseClient{
         },
       }
   );
-    return supabaseClient
+  return supabaseClient
   }
   
 
@@ -105,14 +105,15 @@ export function createTokenEncoder(model:string):ReturnType<typeof tiktoken.enco
     return tiktoken.encoding_for_model(model);
 }
 
-export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding_for_model>,textCoder:TextCoder):Tokenizer{
+export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding_for_model>,textCoder:TextCoder, hexCoder:HexCoder):Tokenizer{
+    
     const encode: (input: string) => number[] = (input: string) => {
       return tokenEncoder.encode(input);
     };
     const decode: (tokens: number[]) => string = (tokens: number[]) => {
       return textCoder.textDecoder.decode(tokenEncoder.decode(tokens));
     };
-    const listSlice:(input:T[])=>{start:number,end:number}[] = (input:T[])=>{
+    const listSlice:(input:number[])=>{start:number,end:number}[] = (input:number[])=>{
       const length:number = input.length;
       const slicesLength:number = Math.ceil(length/200);
       const slicesList:{start:number,end:number}[] = [];
@@ -121,17 +122,21 @@ export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding
       }
       return slicesList;
     }
-    const applyListSlice:(input:T[],slicesList:{start:number,end:number}[])=>T[][] = (input:T[],slicesList:{start:number,end:number}[])=>{
-      return slicesList.map(slice=>input.slice(slice.start,slice.end));
+    const applyListSlice:(input:number[],slicesList:{start:number,end:number}[])=>{chunk_:number[],start_:number,end_:number}[] = (input:T[],slicesList:{start:number,end:number}[])=>{
+      return slicesList.map(slice=>{return {chunk_:input.slice(slice.start,slice.end),start_:slice.start,end_:slice.end}});
     }
-    const chunkContent: (input:string)=>string[] = (input:string)=>{
+    const chunkContent: (input:string)=>{chunk:string,start_:number,end_:number}[] = (input:string)=>{
       const tokens = tokenEncoder.encode(input);
       const slicesList = listSlice(tokens);
-      const chunks = applyListSlice(tokens,slicesList);
-      return chunks.map(chunk=>textCoder.textDecoder.decode(tokenEncoder.decode(chunk)));
+      const sliced = applyListSlice(tokens,slicesList);
+      return sliced.map(s=>{return {chunk:textCoder.textDecoder.decode(tokenEncoder.decode(s.chunk_)),start_:s.start_,end_:s.end_}});
     }
 
-    return {encode,decode,listSlice,applyListSlice,chunkContent};
+    const chunkHexContent: (input:string,x?:Record<string,any>)=>Record<string,any>&{chunk:string,start_:number,end_:number}[] = (input:string,x?:Record<string,any>)=>{
+      return chunkContent(hexCoder.decode(input)).map(c=>{return {...x,hex_chunk:hexCoder.encode(c.chunk),start_:c.start_,end_:c.end_}});
+    }
+
+    return {encode,decode,listSlice,applyListSlice,chunkContent,chunkHexContent};
 }
 
 export function createAnthropicClient(ctx:Env=Deno.env):Anthropic{
