@@ -9,6 +9,9 @@ begin  return query with merged as (
     when not matched by target then insert values (s.id, now(), s.fragment_id, auth.uid())
     returning t.*
 )
+
+select * from merged;
+
 delete from tmp_tokens_insert where true;
 end;
 $$;

@@ -1,10 +1,10 @@
 import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, CrawlableDTO, CrawledDTO, ContentsRowDTO, TextCoder, HexCoder, Browser, BrowserFactory, CrawlQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI} from "@types";
-import { isListOfTokenizableDTOWithHexFragment, isSingleCrawlableDTO, isSingleCrawledDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment } from "../../packages/types/guards.ts";
+import { isListOfTokenizableDTOWithHexFragment, isSingleCrawlableDTO, isSingleCrawledDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
-import { AIClient, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor } from "../../packages/types/index.ts";
-import { invoke } from "./transformations/llmmodel-compilation.ts";
+import { AIClient, OpenAI, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO } from "../../packages/types/index.ts";
+import { invoke, vectorize } from "./transformations/llmmodel-compilation.ts";
 import { createTokenizer, createTextCoder, createTokenEncoder } from "./context.ts";
 
 
@@ -329,6 +329,48 @@ export function translateLLMResponseDTOToDBQueryDTO(hexCoder:HexCoder,llmRespons
         const rows = llmResponseDTO.map((llmResponseDTO)=>({content_id: llmResponseDTO.metadata.contentId,
              hex_summary:hexCoder.encode(llmResponseDTO.response)}));
         return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows, SQLFunction: 'insert_into_summaries'};
+    }
+}
+
+export function formatToEmbeddingRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):EmbeddingRequestDTO{
+    const {data, error} = dbResponseDTO;
+    if (error) {
+        throw new Error('Error formatting to embedding request DTO');
+    }
+    else {
+        console.log('Formatting to embedding request DTO!',data);
+        return data.map((d)=>({model: 'text-embedding-3-small', input: hexCoder.decode(d.chunk), chunkId: d.id }));
+    }
+}   
+
+export function compileToEmbeddingModel(aiClient:OpenAI,embeddingRequestDTO:EmbeddingRequestDTO):EmbeddingModel{
+    return {client: aiClient, EmbeddingRequestDTO:embeddingRequestDTO, vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>vectorize(aiClient,singleEmbeddingRequestDTO)};
+}
+
+export async function executeEmbeddingModel(embeddingModel:EmbeddingModel):Promise<EmbeddingResponseDTO>{
+    const {EmbeddingRequestDTO, vectorize} = embeddingModel;
+    if (isSingleEmbeddingRequestDTO(EmbeddingRequestDTO)) {
+        const response = await vectorize(EmbeddingRequestDTO);
+        return {embeddings: response, chunkId: EmbeddingRequestDTO.chunkId};
+    }
+    else {
+        const embeddingResponseDTO:EmbeddingResponseDTO = [];
+        for (const singleEmbeddingRequestDTO of EmbeddingRequestDTO) {
+            const response = await vectorize(singleEmbeddingRequestDTO);
+            embeddingResponseDTO.push({embeddings: response, chunkId: singleEmbeddingRequestDTO.chunkId});
+        }
+        return embeddingResponseDTO;
+    }
+}
+
+export function translateEmbeddingResponseDTOToDBQueryDTO(hexCoder:HexCoder,embeddingResponseDTO:EmbeddingResponseDTO):DBQueryDTO{
+    if (isSingleEmbeddingResponseDTO(embeddingResponseDTO)) {
+        const {embeddings, chunkId} = embeddingResponseDTO;
+        return {statement: 'insert', cacheTable: 'tmp_vectors_insert', rows: [{chunk_id: chunkId, embeddings: embeddings}], SQLFunction: 'insert_into_vectors'};
+    }
+    else {
+        const rows = embeddingResponseDTO.map((embeddingResponseDTO)=>({chunk_id: embeddingResponseDTO.chunkId, embeddings: embeddingResponseDTO.embeddings}));
+        return {statement: 'insert', cacheTable: 'tmp_vectors_insert', rows, SQLFunction: 'insert_into_vectors'};
     }
 }
 

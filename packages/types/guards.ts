@@ -2,7 +2,7 @@ import type { OpenAI} from "npm:@types/openai";
 import type {Anthropic} from 'npm:@anthropic-ai/sdk';
 import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
-import type {  AIClient, CrawlableDTO, CrawledDTO, LLMRequestDTO, LLMResponseDTO,   SingleCrawlableDTO, SingleCrawledDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO} from "./index.ts";
+import type {  AIClient, CrawlableDTO, CrawledDTO, LLMRequestDTO, LLMResponseDTO,   SingleCrawlableDTO, SingleCrawledDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO} from "./index.ts";
 
 export function isSingleCrawlableDTO(crawlableDTO:CrawlableDTO):crawlableDTO is SingleCrawlableDTO{
     return 'url' in crawlableDTO;
@@ -98,3 +98,13 @@ export function isDeepSeekClient(client:AIClient):client is DeepSeek{
       'models' in client && typeof (client as any).models?.list === 'function'
     )
 };
+
+export function isSingleEmbeddingRequestDTO(embeddingRequestDTO:EmbeddingRequestDTO):embeddingRequestDTO is SingleEmbeddingRequestDTO{
+    return 'model' in embeddingRequestDTO;
+}
+
+
+
+export function isSingleEmbeddingResponseDTO(embeddingResponseDTO:EmbeddingResponseDTO):embeddingResponseDTO is SingleEmbeddingResponseDTO{
+    return 'embedding' in embeddingResponseDTO;
+}

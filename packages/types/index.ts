@@ -134,7 +134,6 @@ export type LLMModel = {
     invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
 }
 
-
 export type SingleLLMResponseDTO = {
     response: string;
     response_type?: string;
@@ -143,14 +142,26 @@ export type SingleLLMResponseDTO = {
 
 export type LLMResponseDTO = OneOrMany<SingleLLMResponseDTO>;
 
-export type EmbeddingRequestDTO = {
+export type SingleEmbeddingRequestDTO = {
     model: string;
     input: string;
+    chunkId: string;
 };
 
-export type EmbeddingResponseDTO = {
-    embedding: number[];
+export type EmbeddingRequestDTO = OneOrMany<SingleEmbeddingRequestDTO>;
+
+export type EmbeddingModel = {
+    client: AIClient;
+    EmbeddingRequestDTO:EmbeddingRequestDTO;
+    vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>Promise<number[]>;
+}
+
+export type SingleEmbeddingResponseDTO = {
+    embeddings: number[];
+    chunkId: string;
 };
+
+export type EmbeddingResponseDTO = OneOrMany<SingleEmbeddingResponseDTO>;
 
 export type DBQueryDTO = {
   statement:string;

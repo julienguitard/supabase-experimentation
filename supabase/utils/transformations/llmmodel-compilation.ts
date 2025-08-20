@@ -1,4 +1,4 @@
-import type { SingleLLMRequestDTO, AIClient } from "@types";
+import type { SingleLLMRequestDTO, AIClient, SingleEmbeddingRequestDTO, OpenAI } from "@types";
 import { isAnthropicClient, isDeepSeekClient, isOpenAIClient } from "../../../packages/types/guards.ts";
 
 export async function invoke(aiClient:AIClient,singleLLMReuquestDTO:SingleLLMRequestDTO):Promise<string>{
@@ -36,3 +36,9 @@ export async function invoke(aiClient:AIClient,singleLLMReuquestDTO:SingleLLMReq
         return response;
     }
 }
+
+
+export async function vectorize(aiClient:OpenAI,singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO):Promise<number[]>{
+    const response = await aiClient.embeddings.create({model: singleEmbeddingRequestDTO.model, input: singleEmbeddingRequestDTO.input});
+        return response.data[0].embedding;
+    }

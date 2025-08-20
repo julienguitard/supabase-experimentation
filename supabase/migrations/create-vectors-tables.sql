@@ -1,8 +1,12 @@
+drop table if exists tmp_vectors_insert cascade;
+
+drop table if exists vectors cascade;
+
 create table vectors (
     id uuid not null default gen_random_uuid(),
     created_at timestamp with time zone default current_timestamp,
-    chunk_id int8 not null,
-    vector vector(1536) not null,
+    chunk_id uuid not null,
+    embeddings vector(1536) not null,
     user_id uuid not null,
     constraint vectors_pkey primary key (id),
     constraint vectors_chunk_id_fkey foreign key (chunk_id) references chunks (id),

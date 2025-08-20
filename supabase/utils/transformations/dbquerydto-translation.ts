@@ -33,6 +33,8 @@ export function edgeFunctionToTable(edgeFunction:string,step?:string):Option<str
             return 'tmp_fragments_to_check';
         case 'chunk-fragments':
             return 'tmp_fragments_to_chunk_with_content';
+        case 'vectorize-chunks':
+            return 'tmp_chunks_to_vectorize';
         default:
             return null;
     }
@@ -56,6 +58,8 @@ export function edgeFunctionToCacheTable(edgeFunction:string,step?:string):Optio
             return 'tmp_fragments_insert';
         case 'chunk-fragments':
             return 'tmp_chunks_insert';
+        case 'vectorize-chunks':
+            return 'tmp_vectors_insert';
         default:
             return null;
     }
@@ -71,10 +75,14 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
             return 'delete_into_links';
         case 'fetch-links':
             return 'insert_into_contents';
-        case 'insert-contents':
-            return 'tmp_contents_insert';
-        case 'insert-summaries':
-            return 'tmp_summaries_insert';
+        case 'summarize-links':
+            return 'insert_into_summaries';
+        case 'check-fragments':
+            return 'insert_into_fragments';
+        case 'chunk-fragments':
+            return 'insert_into_chunks';
+        case 'vectorize-chunks':
+            return 'insert_into_vectors';
         default:    
             return null;
     }
