@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { BrowserFactory, BrowserlessClient} from '@types';
-import { createBrowserFactory, createBrowserlessClient, createTextCoder, createHexCoder, createAuthenticatedSupabaseClient } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateCrawledDTOToDBQueryDTO, formatToCrawlableDTO, compileToCrawlQuery, executeCrawlQuery, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
+import { createBrowserFactory, createBrowserlessClient, createTextCoder, createHexCoder, createAuthenticatedSupabaseClient } from "../../shared/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateCrawledDTOToDBQueryDTO, formatToCrawlableDTO, compileToCrawlQuery, executeCrawlQuery, createResponseDTOFromAuthenticationError } from "../../shared/pipeline-elements.ts";
 
 
 const browserFactory: BrowserFactory = createBrowserFactory();
@@ -43,7 +43,6 @@ Deno.serve(async (req:Request)=>{
 
     //Step 06: Compile the crawlable DTO to crawl query
     console.log(`[${Date.now()}] Step 06: Compiling crawl query...`);
-    //const crawlQuery = compileToCrawlQuery(crawlableDTO, browserlessClient);
     const crawlQuery = compileToCrawlQuery(crawlableDTO,browserlessClient);
     console.log(`[${Date.now()}] Step 06 complete: Crawl query:`, crawlQuery);
 

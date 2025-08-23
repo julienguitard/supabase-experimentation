@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createAuthenticatedSupabaseClient, createTextCoder, createHexCoder, createOpenAIClient} from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, createResponseDTOFromAuthenticationError, formatToEmbeddingRequestDTO, compileToEmbeddingModel, executeEmbeddingModel, translateEmbeddingResponseDTOToDBQueryDTO } from "../../utils/pipeline.ts";
+import { createAuthenticatedSupabaseClient, createTextCoder, createHexCoder, createOpenAIClient} from "../../shared/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, createResponseDTOFromAuthenticationError, formatToEmbeddingRequestDTO, compileToEmbeddingModel, executeEmbeddingModel, translateEmbeddingResponseDTOToDBQueryDTO } from "../../shared/pipeline-elements.ts";
 
 
 const edgeFunction: string = 'vectorize-chunks';

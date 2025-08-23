@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { BrowserFactory, BrowserlessClient} from '@types';
-import { createTextCoder, createHexCoder,createTokenEncoder, createTokenizer, createAuthenticatedSupabaseClient } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateDBResponseDTOToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
+import { createTextCoder, createHexCoder,createTokenEncoder, createTokenizer, createAuthenticatedSupabaseClient } from "../../shared/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateDBResponseDTOToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../shared/pipeline-elements.ts";
 
 
 const textCoder = createTextCoder();

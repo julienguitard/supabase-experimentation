@@ -189,3 +189,10 @@ export type ResponseDTO = {
     body: string;
     error?: string;
 }
+
+export type ClientsContext = {
+    browserlessClient?: BrowserlessClient;
+    hexCoder?: HexCoder;
+    tokenizer?: Tokenizer;
+    aiClient?: AIClient;
+}

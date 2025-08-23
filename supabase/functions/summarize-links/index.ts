@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type {  OpenAI } from '@types';
-import {createHexCoder, createAuthenticatedSupabaseClient, createOpenAIClient, createTextCoder } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateLLMResponseDTOToDBQueryDTO, formatToLLMRequestDTO, compileToLLMModel, executeLLMModel, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
+import {createHexCoder, createAuthenticatedSupabaseClient, createOpenAIClient, createTextCoder } from "../../shared/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, translateLLMResponseDTOToDBQueryDTO, formatToLLMRequestDTO, compileToLLMModel, executeLLMModel, createResponseDTOFromAuthenticationError } from "../../shared/pipeline-elements.ts";
 
 
 const openaiClient: OpenAI = createOpenAIClient();

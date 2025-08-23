@@ -171,5 +171,6 @@ with
       *
     from
       fragments_to_chunk_with_content
+    order by random()
     limit 5
   );

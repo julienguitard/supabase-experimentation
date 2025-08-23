@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createAuthenticatedSupabaseClient } from "../../utils/context.ts";
-import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../utils/pipeline.ts";
+import { createAuthenticatedSupabaseClient } from "../../shared/context.ts";
+import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, createResponseDTOFromAuthenticationError } from "../../shared/pipeline-elements.ts";
 
 
 const edgeFunction: string = 'delete-links';

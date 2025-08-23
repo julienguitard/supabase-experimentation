@@ -49,6 +49,15 @@ where
 );
 
 -- Create a shorter view to find a random link that hasn't been crawled yet, for scalability
-create view tmp_links_to_crawl with (security_invoker = on) as (
-    select * from links_to_crawl order by random() limit 1 -- Todo  remove limit
-);
+create view tmp_links_to_crawl
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      links_to_crawl
+    order by
+      random()
+    limit
+      1 -- Todo  remove limit
+  );

@@ -52,6 +52,7 @@ with
       *
     from
       chunks_to_vectorize
+    order by random()
     limit
       5
   );

@@ -8,9 +8,6 @@ import {Browserless} from "npm:browserless";
 import puppeteer from "npm:puppeteer-core";
 
 
-
-
-
 // Create a Supabase client
 export function createSupabaseClient(ctx:Env=Deno.env):SupabaseClient{
     const supabaseUrl: string = ctx.get('SUPABASE_URL') as string;
@@ -179,3 +176,5 @@ export function createMarkdownReader(): (filePath: string) => Promise<string> {
     }
   };
 }
+
+
