@@ -98,7 +98,7 @@ export function createHexCoder(textCoder:TextCoder):HexCoder{
     return hexCoder;
 }
 
-export function createTokenEncoder(model:string):ReturnType<typeof tiktoken.encoding_for_model>{
+export function createTokenEncoder(model:string='gpt-4o'):ReturnType<typeof tiktoken.encoding_for_model>{
     return tiktoken.encoding_for_model(model);
 }
 
