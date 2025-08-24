@@ -1,8 +1,8 @@
 drop function if exists insert_into_summaries;
 
-drop table if exists public.summaries;
+drop table if exists summaries;
 
-create table public.summaries (
+create table summaries (
   id uuid not null default gen_random_uuid (),
   created_at timestamp with time zone not null default now(),
   content_id uuid null,
@@ -13,7 +13,7 @@ create table public.summaries (
   constraint summaries_user_id_fkey foreign key (user_id) references auth.users (id)
 ) TABLESPACE pg_default;
 
-drop table if exists public.tmp_summaries_insert;
+drop table if exists tmp_summaries_insert;
 
 create table tmp_summaries_insert as (
   select

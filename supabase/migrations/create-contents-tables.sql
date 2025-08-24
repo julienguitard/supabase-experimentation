@@ -3,9 +3,9 @@ drop function if exists insert_http_into_contents;
 
 drop function if exists insert_into_contents;
 
-drop table if exists public.contents;
+drop table if exists contents;
 
-create table public.contents (
+create table contents (
   id uuid not null default gen_random_uuid (), -- Unique identifier for each log entry
   created_at timestamp with time zone not null default now(), -- Timestamp when the log was created
   link_id uuid null default gen_random_uuid (), -- Reference to the related URL in the links table
@@ -18,7 +18,7 @@ create table public.contents (
   constraint contents_user_id_fkey foreign key (user_id) references auth.users (id)
 ) TABLESPACE pg_default;
 
-drop table if exists public.tmp_contents_insert;
+drop table if exists tmp_contents_insert;
 
 create table tmp_contents_insert as (
   select

@@ -1,4 +1,4 @@
-create table public.links (
+create table links (
   id uuid not null default gen_random_uuid (), -- Unique identifier for each link, generated automatically
   created_at timestamp with time zone not null default now(), -- Timestamp when the link was created
   url text not null, -- The actual URL being stored
