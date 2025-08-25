@@ -17,8 +17,9 @@ export function createClientsContext(name:string):ClientsContext{
         const tokenizer = createTokenizer(createTokenEncoder(),textCoder,hexCoder);
         return {hexCoder,tokenizer}
     case 'vectorize-chunks':
-        const openaiClient = createOpenAIClient();
         return {hexCoder,aiClient:createOpenAIClient()}
+    case 'insert-questions':
+        return {hexCoder:createHexCoder(createTextCoder())}
     default:
         return {};
     }
@@ -133,6 +134,14 @@ export function getPipelineGenerator(name:string){
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]}
+        case 'insert-questions':
+                return (client:unknown,hexCoder:HexCoder)=>{return [
+                    async (request:Request)=>await parseRequest(request),
+                    (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'insert-questions','insert-questions',hexCoder),//TO DO improve this
+                    (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                    async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
+                    (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
+                ]};
         default:
             throw new Error('Unknown pipeline name');
         }

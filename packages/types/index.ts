@@ -4,10 +4,13 @@ import type { OpenAI} from "npm:@types/openai";
 import type {Anthropic} from 'npm:@anthropic-ai/sdk';
 import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
+
+// Utility types
 export type Option<T> = T | null;
 
 export type OneOrMany<T> = T | T[];
 
+// Environment & clients types
 export type Env = {
     get(key: string): Option<string>;
     // ...other methods like set, delete, toObjec;t, etc.
@@ -42,11 +45,20 @@ export type Tokenizer = {
     chunkHexContent: (input:string,x?:Record<string,any>)=>{x,chunk:string,start_:number,end_:number}[];
 }
 
-// Shared TypeScript types will go here 
+
+export type ClientsContext = {
+    browserlessClient?: BrowserlessClient;
+    hexCoder?: HexCoder;
+    tokenizer?: Tokenizer;
+    aiClient?: AIClient;
+}
+
 export type User = {
     email: string;
     user_id: string;
 }
+
+// Business and data types
 
 export type Message<T> = {
     role: string;
@@ -188,11 +200,4 @@ export type ResponseDTO = {
     headers: Record<string, string>;
     body: string;
     error?: string;
-}
-
-export type ClientsContext = {
-    browserlessClient?: BrowserlessClient;
-    hexCoder?: HexCoder;
-    tokenizer?: Tokenizer;
-    aiClient?: AIClient;
 }

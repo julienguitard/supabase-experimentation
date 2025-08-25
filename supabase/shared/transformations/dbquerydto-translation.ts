@@ -60,6 +60,8 @@ export function edgeFunctionToCacheTable(edgeFunction:string,step?:string):Optio
             return 'tmp_chunks_insert';
         case 'vectorize-chunks':
             return 'tmp_vectors_insert';
+        case 'insert-questions':
+            return 'tmp_questions_insert';
         default:
             return null;
     }
@@ -83,6 +85,8 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
             return 'insert_into_chunks';
         case 'vectorize-chunks':
             return 'insert_into_vectors';
+        case 'insert-questions':
+            return 'insert_into_questions';
         default:    
             return null;
     }
@@ -98,4 +102,5 @@ export function translateSingleCrawledDTOToContentsRowDTO(
     hex_content: hexCoder.encode(crawledDTO.content),
   };
 }
+
 

@@ -7,7 +7,7 @@ begin
     with merged as (
         merge into questions_matching_chunks t
         using tmp_questions_matching_chunks_insert s
-        on t.modified_question_id = s.modified_question_id and t.chunk_id = s.chunk_id
+        on t.modified_question_id = s.modified_question_id and t.chunk_id = s.chunk_id -- One row per modified question and chunk
         when matched then do nothing
         when not matched by target then insert values 
         (gen_random_uuid(), now(), s.modified_question_id, s.chunk_id, auth.uid())

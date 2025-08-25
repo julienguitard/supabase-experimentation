@@ -7,9 +7,9 @@ begin
     with merged as (
         merge into questions t
         using tmp_questions_insert s
-        on t.question = s.question
+        on t.question = decode(s.hex_question, 'hex')
         when matched then do nothing
-        when not matched by target then insert values 
+        when not matched by target then insert values
         (gen_random_uuid(), now(),decode(s.hex_question, 'hex'), auth.uid())
         returning t.*
     )

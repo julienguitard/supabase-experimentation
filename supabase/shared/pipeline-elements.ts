@@ -39,7 +39,7 @@ export async function parseRequest(req:Request):RequestDTO{
     return {method, url:url.pathname, urlSearchParams, authHeader, body};
 }
 
-export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string):DBQueryDTO{
+export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string,hexCoder?:HexCoder):DBQueryDTO{
     const {method, urlSearchParams, authHeader} = reqDTO;
     let statement:string;
     if (step){
@@ -75,6 +75,12 @@ export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:
             SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
         }   
         const rows = reqDTO.body;
+        if (edgeFunction === 'insert-questions' && hexCoder) {
+            const rows_ = rows.map((row)=>({hex_question:hexCoder.encode(row.question)}));
+            return {statement, table, rows: rows_, cacheTable, SQLFunction};
+        } else if (edgeFunction === 'insert-questions' && !hexCoder) {
+            throw new Error('HexCoder is required for insert-questions');
+        }
         if (id) {
             throw new Error('Inserting with an id is not allowed');
         }

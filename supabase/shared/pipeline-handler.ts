@@ -23,6 +23,9 @@ export async function handlePipeline(ctx:ClientsContext, pipeline:Pipeline, req:
         } else if (ctx.aiClient) {
             console.log(`[${Date.now()}] Using AI client pipeline`);
             steps = pipeline(supabaseClient, ctx.hexCoder, ctx.aiClient);
+        } else if (ctx.hexCoder) {
+            console.log(`[${Date.now()}] Using hexCoder pipeline`);
+            steps = pipeline(supabaseClient, ctx.hexCoder);
         } else {
             console.log(`[${Date.now()}] Using basic pipeline`);
             steps = pipeline(supabaseClient);
