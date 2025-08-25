@@ -1,6 +1,7 @@
-import { createAuthenticatedSupabaseClient } from "./context.ts";
+import { createAuthenticatedSupabaseClient } from "./context-elements.ts";
 import { createResponse, createResponseDTOFromAuthenticationError } from "./pipeline-elements.ts";
-import { createClientsContext, getPipelineGenerator } from "./pipelines.ts";
+import { createClientsContext } from "./context.ts";
+import {  getPipelineGenerator } from "./pipelines.ts";
 
 
 export function createPipeline(name:string){

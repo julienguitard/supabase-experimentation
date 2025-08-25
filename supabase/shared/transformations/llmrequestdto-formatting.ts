@@ -1,4 +1,4 @@
-import { createMarkdownReader,createHexCoder } from "../context.ts";
+import { createMarkdownReader,createHexCoder } from "../context-elements.ts";
 import type { Message, HexCoder } from "@types";
 import { systemPrompt } from "../../prompts/summarize-links/system-0.ts";
 import { userPrompt } from "../../prompts/summarize-links/user-0.ts";

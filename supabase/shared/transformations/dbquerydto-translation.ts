@@ -1,5 +1,5 @@
 import type { ContentsRowDTO, Option, SingleCrawledDTO, HexCoder } from "@types";
-import { createTextCoder, createHexCoder } from "../context.ts";
+import { createTextCoder, createHexCoder } from "../context-elements.ts";
 import { Tokenizer } from "../../../packages/types/index.ts";
 
 export function edgeFunctionToStatement(edgeFunction:string,step?:string):string{

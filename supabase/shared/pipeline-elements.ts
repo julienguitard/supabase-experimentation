@@ -5,7 +5,7 @@ import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transforma
 import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
 import { AIClient, OpenAI, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO } from "../../packages/types/index.ts";
 import { invoke, vectorize } from "./transformations/llmmodel-compilation.ts";
-import { createTokenizer, createTextCoder, createTokenEncoder } from "./context.ts";
+import { createTokenizer, createTextCoder, createTokenEncoder } from "./context-elements.ts";
 
 
 export async function parseRequest(req:Request):RequestDTO{

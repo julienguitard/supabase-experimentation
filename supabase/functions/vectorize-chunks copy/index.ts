@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createAuthenticatedSupabaseClient, createTextCoder, createHexCoder, createOpenAIClient} from "../../shared/context.ts";
+import { createAuthenticatedSupabaseClient, createTextCoder, createHexCoder, createOpenAIClient} from "../../shared/context-elements.ts";
 import { parseRequest,createResponse,formatToResponseDTO, executeDBQuery,compileToDBQuery,translateRequestDTOToDBQueryDTO, createResponseDTOFromAuthenticationError, formatToEmbeddingRequestDTO, compileToEmbeddingModel, executeEmbeddingModel, translateEmbeddingResponseDTOToDBQueryDTO } from "../../shared/pipeline-elements.ts";
 
 
