@@ -11,7 +11,8 @@ with
       fragment_id,
       chunk,
       start_,
-      end_
+      end_,
+      length_
     from
       (
         select
@@ -21,7 +22,8 @@ with
           c.fragment_id,
           c.chunk,
           c.start_,
-          c.end_
+          c.end_,
+          c.length_
         from
           (
             select
@@ -30,7 +32,8 @@ with
               fragment_id,
               chunk,
               start_,
-              end_
+              end_,
+              length_
             from
               chunks
           ) c

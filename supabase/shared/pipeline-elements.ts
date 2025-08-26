@@ -282,11 +282,11 @@ export function executeTokenizerExecutor(tokenizerExecutor:TokenizerExecutor):Op
 
 export function translateTokenizedDTOToDBQueryDTO(hexCoder:HexCoder,tokenizedDTO:TokenizedDTO):DBQueryDTO{
     if (isSingleTokenizedDTOWithHexFragment(tokenizedDTO)) {
-        const {fragment_id, hex_chunk, start_, end_} = tokenizedDTO;
-        return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows: [{fragment_id, hex_chunk, start_, end_}], SQLFunction: 'insert_into_chunks'};
+        const {fragment_id, hex_chunk, start_, end_, length_} = tokenizedDTO;
+        return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows: [{fragment_id, hex_chunk, start_, end_, length_}], SQLFunction: 'insert_into_chunks'};
     }
     else {
-        const rows = tokenizedDTO.map((t)=>({fragment_id: t.fragment_id, hex_chunk: t.hex_chunk, start_: t.start_, end_: t.end_}));
+        const rows = tokenizedDTO.map((t)=>({fragment_id: t.fragment_id, hex_chunk: t.hex_chunk, start_: t.start_, end_: t.end_, length_: t.length_}));
         return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows, SQLFunction: 'insert_into_chunks'};
     }
 }

@@ -8,7 +8,8 @@ begin  return query with merged as (
     using tmp_chunks_insert s
     on t.fragment_id = s.fragment_id -- We dont rechunk an existing fragment
     when matched then do nothing
-    when not matched by target then insert values (gen_random_uuid(), now(), s.fragment_id, decode(s.hex_chunk, 'hex'), s.start_, s.end_, auth.uid())
+    when not matched by target then insert (id, created_at, fragment_id, chunk, start_, end_, length_, user_id) values 
+    (gen_random_uuid(), now(), s.fragment_id, decode(s.hex_chunk, 'hex'), s.start_, s.end_,s.length_, auth.uid())
     returning t.*
 )
 
@@ -17,3 +18,4 @@ select * from merged;
 delete from tmp_chunks_insert where true;
 end;
 $$;
+

@@ -59,7 +59,7 @@ begin
         using tmp_contents_insert s
         on t.link_id = s.link_id and t.created_at = now() -- A link can be crawled multiple times
         when matched then do nothing
-        when not matched by target then insert values 
+        when not matched by target then insert (id, created_at, link_id, status, content, error, user_id) values 
         (gen_random_uuid(), now(), s.link_id, s.status, decode(s.hex_content, 'hex'), decode(s.hex_error, 'hex'), auth.uid())
         returning t.*
     )

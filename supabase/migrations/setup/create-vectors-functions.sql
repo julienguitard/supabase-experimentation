@@ -6,7 +6,8 @@ begin  return query with merged as (
     using tmp_vectors_insert s
     on t.chunk_id = s.chunk_id --We dont revectorize an existing chunk
     when matched then do nothing
-    when not matched by target then insert values (gen_random_uuid(), now(), s.chunk_id, s.embeddings, auth.uid())
+    when not matched by target then insert (id, created_at, chunk_id, embeddings, user_id) values 
+    (gen_random_uuid(), now(), s.chunk_id, s.embeddings, auth.uid())
     returning t.*
 )
 

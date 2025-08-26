@@ -9,7 +9,7 @@ begin
         using tmp_questions_insert s
         on t.question = decode(s.hex_question, 'hex')
         when matched then do nothing
-        when not matched by target then insert values
+        when not matched by target then insert (id, created_at, question, user_id) values 
         (gen_random_uuid(), now(),decode(s.hex_question, 'hex'), auth.uid())
         returning t.*
     )

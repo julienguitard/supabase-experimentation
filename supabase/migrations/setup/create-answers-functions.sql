@@ -7,9 +7,9 @@ begin
     with merged as (
         merge into answers t
         using tmp_answers_insert s
-        on t.modified_question_id = s.modified_question_id and t.create_at = now()
+        on t.modified_question_id = s.modified_question_id and t.created_at = now()
         when matched then do nothing
-        when not matched by target then insert values 
+        when not matched by target then insert (id, created_at, modified_question_id, answer, user_id) values 
         (gen_random_uuid(), now(), s.modified_question_id, decode(s.hex_answer, 'hex'), auth.uid())
         returning t.*
     )

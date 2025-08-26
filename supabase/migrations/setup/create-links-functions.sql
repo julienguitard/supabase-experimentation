@@ -14,7 +14,8 @@ begin
         using tmp_links_insert s
         on t.url = s.url
         when matched then do nothing
-        when not matched by target then insert values (gen_random_uuid(), now(), s.url, s.category, auth.uid())
+        when not matched by target then insert (id, created_at, url, category, user_id) values 
+        (gen_random_uuid(), now(), s.url, s.category, auth.uid())
         returning t.*
     )
     select * from merged;

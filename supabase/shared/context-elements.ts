@@ -115,22 +115,22 @@ export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding
       const slicesLength:number = Math.ceil(length/200);
       const slicesList:{start:number,end:number}[] = [];
       for(let i:number = 0; i < slicesLength; i++){
-        slicesList.push({start:i*200,end:i*200+200})
+        slicesList.push({start:i*200,end:i*200+256})
       }
       return slicesList;
     }
     const applyListSlice:(input:number[],slicesList:{start:number,end:number}[])=>{chunk_:number[],start_:number,end_:number}[] = (input:T[],slicesList:{start:number,end:number}[])=>{
-      return slicesList.map(slice=>{return {chunk_:input.slice(slice.start,slice.end),start_:slice.start,end_:slice.end}});
+      return slicesList.map(slice=>{return {chunk_:input.slice(slice.start,slice.end),start_:slice.start,end_:slice.end, length_:slice.end-slice.start}});
     }
     const chunkContent: (input:string)=>{chunk:string,start_:number,end_:number}[] = (input:string)=>{
       const tokens = tokenEncoder.encode(input);
       const slicesList = listSlice(tokens);
       const sliced = applyListSlice(tokens,slicesList);
-      return sliced.map(s=>{return {chunk:textCoder.textDecoder.decode(tokenEncoder.decode(s.chunk_)),start_:s.start_,end_:s.end_}});
+      return sliced.map(s=>{return {chunk:textCoder.textDecoder.decode(tokenEncoder.decode(s.chunk_)),start_:s.start_,end_:s.end_, length_:s.length_}});
     }
 
     const chunkHexContent: (input:string,x?:Record<string,any>)=>Record<string,any>&{chunk:string,start_:number,end_:number}[] = (input:string,x?:Record<string,any>)=>{
-      return chunkContent(hexCoder.decode(input)).map(c=>{return {...x,hex_chunk:hexCoder.encode(c.chunk),start_:c.start_,end_:c.end_}});
+      return chunkContent(hexCoder.decode(input)).map(c=>{return {...x,hex_chunk:hexCoder.encode(c.chunk),start_:c.start_,end_:c.end_, length_:c.length_}});
     }
 
     return {encode,decode,listSlice,applyListSlice,chunkContent,chunkHexContent};

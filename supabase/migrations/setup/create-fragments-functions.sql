@@ -8,7 +8,8 @@ begin  return query with merged as (
     and t.source_column = s.source_column
     and t.source_id = s.source_id
     when matched then do nothing
-    when not matched by target then insert values (gen_random_uuid(), now(), s.source_table, s.source_column, s.source_id, auth.uid())
+    when not matched by target then insert (id, created_at, source_table, source_column, source_id, user_id) values 
+    (gen_random_uuid(), now(), s.source_table, s.source_column, s.source_id, auth.uid())
     returning t.*
 )
     select * from merged;

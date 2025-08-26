@@ -7,9 +7,9 @@ begin
     with merged as (
         merge into summaries t
         using tmp_summaries_insert s
-        on t.content_id = s.content_id AND t.create_at = now()
+        on t.content_id = s.content_id AND t.created_at = now()
         when matched then do nothing
-        when not matched by target then insert values 
+        when not matched by target then insert (id, created_at, content_id, summary, user_id) values 
         (gen_random_uuid(), now(), s.content_id, decode(s.hex_summary, 'hex'),auth.uid())
         returning t.*
     )

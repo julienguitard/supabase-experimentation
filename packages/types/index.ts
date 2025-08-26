@@ -40,9 +40,9 @@ export type Tokenizer = {
     encode: (input: string) => number[];
     decode: (tokens: number[]) => string;
     listSlice: (input: number[]) => {start:number,end:number}[];
-    applyListSlice: (input: number[],slicesList: {start:number,end:number}[]) => {chunk_:number[],start_:number,end_:number}[];
-    chunkContent: (input:string)=>{chunk:string,start_:number,end_:number}[];
-    chunkHexContent: (input:string,x?:Record<string,any>)=>{x,chunk:string,start_:number,end_:number}[];
+    applyListSlice: (input: number[],slicesList: {start:number,end:number}[]) => {chunk_:number[],start_:number,end_:number,length_:number}[];
+    chunkContent: (input:string)=>{chunk:string,start_:number,end_:number,length_:number}[];
+    chunkHexContent: (input:string,x?:Record<string,any>)=>{x,chunk:string,start_:number,end_:number,length_:number}[];
 }
 
 
@@ -114,14 +114,16 @@ export type SingleTokenizedDTOWithFragment = {
     fragment_id: string,
     chunk:string,
     start_:number,
-    end_:number
+    end_:number,
+    length_:number
 }
 
 export type SingleTokenizedDTOWithHexFragment = {
     fragment_id: string;
     hex_chunk:string,
     start_:number,
-    end_:number
+    end_:number,
+    length_:number
 }
 
 export type SingleTokenizedDTO = SingleTokenizedDTOWithFragment | SingleTokenizedDTOWithHexFragment;

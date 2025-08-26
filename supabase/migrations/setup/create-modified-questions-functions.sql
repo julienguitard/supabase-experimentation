@@ -7,10 +7,10 @@ begin
     with merged as (
         merge into modified_questions t
         using tmp_modified_questions_insert s
-        on t.question_id = s.question_id and t.create_at = now()
+        on t.match_id = s.match_id and t.created_at = now()
         when matched then do nothing
-        when not matched by target then insert values 
-        (gen_random_uuid(), now(), s.question_id, decode(s.hex_modified_question, 'hex'), auth.uid())
+        when not matched by target then insert (id, created_at, match_id, modified_question, user_id) values 
+        (gen_random_uuid(), now(), s.match_id, decode(s.hex_modified_question, 'hex'), auth.uid())
         returning t.*
     )
     select * from merged;
