@@ -1,21 +1,60 @@
 drop view if exists tmp_contents_to_summarize cascade;
 drop view if exists contents_to_summarize cascade;
+drop view if exists latest_contents cascade;
 drop view if exists denormalized_contents cascade;
 
 
-create view denormalized_contents with (security_invoker = on) as (
-  select
-    c.id,
-    c.created_at,
-    c.status,
-    c.content,
-    c.user_id,
-    l.url,
-    l.category
-  from
-    contents c
-    left join links l on c.link_id = l.id
-);
+create view denormalized_contents
+with
+  (security_invoker = on) as (
+    select
+      c.id,
+      c.created_at,
+      c.status,
+      c.content,
+      c.user_id,
+      l.url,
+      l.category
+    from
+      contents c
+      join (
+        select
+          id as link_id,
+          url,
+          category
+        from
+          links
+      ) l using (link_id)
+  );
+
+create view latest_contents
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      (
+        select
+          id,
+          created_at,
+          content,
+          user_id,
+          url,
+          category,
+          status,
+          row_number() over (
+            partition by
+              url
+            order by
+              created_at desc
+          ) as created_at_rank -- TODO : replace url by link_id
+        from
+          denormalized_contents
+      )
+    where
+      created_at_rank = 1
+  );
+
 
 create view contents_to_summarize with (security_invoker = on) as (
   -- Query to find contents that haven't been summarized yet
@@ -42,7 +81,7 @@ create view contents_to_summarize with (security_invoker = on) as (
           select
             *
           from
-            denormalized_contents
+            denormalized_contents --Note : this does not consider the latest content for each user only
           where
             status = 200
         ) c

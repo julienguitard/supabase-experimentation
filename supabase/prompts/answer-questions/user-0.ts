@@ -1,0 +1,1 @@
+export const userPrompt = `Please reformulate this {question} with the following {chunks}`;

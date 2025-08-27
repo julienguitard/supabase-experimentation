@@ -35,6 +35,14 @@ with
           user_id
         from
           summaries
+                union all
+        select
+          'questions' as source_table,
+          'question' as source_column,
+          id as source_id,
+          user_id
+        from
+          summaries
       )
     except all
     select
@@ -142,6 +150,32 @@ with
               fragments_to_chunk
             where
               source_table = 'summaries'
+          ) f using (source_id, user_id)
+           union all
+        select
+          f.id,
+          f.created_at,
+          f.source_table,
+          f.source_column,
+          f.source_id,
+          s.fragment,
+          f.user_id
+        from
+          (
+            select
+              id as source_id,
+              question as fragment,
+              user_id
+            from
+              questions
+          ) s
+          join (
+            select
+              *
+            from
+              fragments_to_chunk
+            where
+              source_table = 'questions'
           ) f using (source_id, user_id)
       )
   );

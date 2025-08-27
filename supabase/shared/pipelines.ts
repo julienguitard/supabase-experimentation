@@ -9,7 +9,7 @@ export function getPipelineGenerator(name:string){
             return (client:unknown)=>{return [
                 async(request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'select-tables'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]}
@@ -17,7 +17,7 @@ export function getPipelineGenerator(name:string){
             return (client:unknown)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'select-rows'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]};
@@ -25,7 +25,7 @@ export function getPipelineGenerator(name:string){
             return (client:unknown)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'insert-links'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]};
@@ -33,7 +33,7 @@ export function getPipelineGenerator(name:string){
             return (client:unknown)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'update-links'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]};
@@ -41,7 +41,7 @@ export function getPipelineGenerator(name:string){
             return (client:unknown)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'delete-links'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]}
@@ -49,13 +49,13 @@ export function getPipelineGenerator(name:string){
             return (client:unknown, browserlessClient:BrowserlessClient,hexCoder:HexCoder)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-links'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponse:DBResponseDTO<unknown>)=>formatToCrawlableDTO(dbResponse),
                 (crawlableDTO:CrawlableDTO)=>compileToCrawlQuery(crawlableDTO, browserlessClient),
                 async (crawlQuery)=>await executeCrawlQuery(crawlQuery),
                 (crawledDTO:CrawledDTO)=>translateCrawledDTOToDBQueryDTO(hexCoder,crawledDTO),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]}
@@ -63,13 +63,13 @@ export function getPipelineGenerator(name:string){
             return (client:unknown,hexCoder:HexCoder, aiClient:AIClient)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-links'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
-                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToLLMRequestDTO(hexCoder,dbResponseDTO),
-                (llmRequestDTO:LLMRequestDTO)=>compileToLLMModel(aiClient,llmRequestDTO),
+                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToLLMRequestDTO(hexCoder,dbResponseDTO,name,name),
+                (llmRequestDTO:LLMRequestDTO)=>compileToLLMModel(llmRequestDTO,aiClient),
                 async (llmModel:LLMModel)=>await executeLLMModel(llmModel),
-                (llmResponseDTO:LLMResponseDTO)=>translateLLMResponseDTOToDBQueryDTO(hexCoder,llmResponseDTO),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (llmResponseDTO:LLMResponseDTO)=>translateLLMResponseDTOToDBQueryDTO(llmResponseDTO,hexCoder,name,'insert-summaries'),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO),
             ]}
@@ -77,10 +77,10 @@ export function getPipelineGenerator(name:string){
             return (client:unknown)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-fragments'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>translateDBResponseDTOToDBQueryDTO(dbResponseDTO,name,'insert-fragments'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO),
             ]}
@@ -88,13 +88,13 @@ export function getPipelineGenerator(name:string){
             return (client:unknown,hexCoder:HexCoder, tokenizer:Tokenizer)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-fragments'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToTokenizableDTO(hexCoder,dbResponseDTO),
                 (tokenizableDTO:TokenizableDTO)=>compileToTokenizerExecutor(tokenizer,tokenizableDTO),
                 async (tokenizerExecutor:TokenizerExecutor)=>await executeTokenizerExecutor(tokenizerExecutor),
                 (tokenizedDTO:TokenizedDTO)=>translateTokenizedDTOToDBQueryDTO(hexCoder,tokenizedDTO),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO),
             ]}
@@ -102,13 +102,13 @@ export function getPipelineGenerator(name:string){
             return (client:unknown,hexCoder:HexCoder, openaiClient:OpenAI)=>{return [
                 async (request:Request)=>await parseRequest(request),
                 (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-chunks'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToEmbeddingRequestDTO(hexCoder,dbResponseDTO),
                 (embeddingRequestDTO:EmbeddingRequestDTO)=>compileToEmbeddingModel(openaiClient,embeddingRequestDTO),
                 async (embeddingModel:EmbeddingModel)=>await executeEmbeddingModel(embeddingModel),
                 (embeddingResponseDTO:EmbeddingResponseDTO)=>translateEmbeddingResponseDTOToDBQueryDTO(hexCoder,embeddingResponseDTO),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
             ]}
@@ -116,10 +116,30 @@ export function getPipelineGenerator(name:string){
                 return (client:unknown,hexCoder:HexCoder)=>{return [
                     async (request:Request)=>await parseRequest(request),
                     (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'insert-questions','insert-questions',hexCoder),//TO DO improve this
-                    (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(client,dbQueryDTO),
+                    (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                     async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                     (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
                 ]};
+        case 'answer-questions':
+            return (client:unknown,hexCoder:HexCoder, aiClient:AIClient)=>{return [
+                async (request:Request)=>await parseRequest(request),
+                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-matches'),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
+                async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
+                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToLLMRequestDTO(hexCoder,dbResponseDTO,name,'modify-questions'),
+                (llmRequestDTO:LLMRequestDTO)=>compileToLLMModel(llmRequestDTO,aiClient),
+                async (llmModel:LLMModel)=>await executeLLMModel(llmModel),
+                (llmResponseDTO:LLMResponseDTO)=>translateLLMResponseDTOToDBQueryDTO(llmResponseDTO,hexCoder,name,'insert-modified-questions'),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
+                async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
+                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToLLMRequestDTO(hexCoder,dbResponseDTO,name,'answer-questions'),
+                (llmRequestDTO:LLMRequestDTO)=>compileToLLMModel(llmRequestDTO,aiClient),
+                async (llmModel:LLMModel)=>await executeLLMModel(llmModel),
+                (llmResponseDTO:LLMResponseDTO)=>translateLLMResponseDTOToDBQueryDTO(llmResponseDTO,hexCoder,name,'insert-answers'),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
+                async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
+                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO),
+            ]}
         default:
             throw new Error('Unknown pipeline name');
         }

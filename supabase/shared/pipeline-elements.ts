@@ -2,7 +2,7 @@ import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO
 import { isListOfTokenizableDTOWithHexFragment, isSingleCrawlableDTO, isSingleCrawledDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleCrawledDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
-import { formatMessageForSummarizingContent } from "./transformations/llmrequestdto-formatting.ts";
+import { formatMessageForSummarizingContent, formatMessageForModifyingQuestions, formatMessageForAnsweringQuestions } from "./transformations/llmrequestdto-formatting.ts";
 import { AIClient, OpenAI, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO } from "../../packages/types/index.ts";
 import { invoke, vectorize } from "./transformations/llmmodel-compilation.ts";
 import { createTokenizer, createTextCoder, createTokenEncoder } from "./context-elements.ts";
@@ -59,7 +59,12 @@ export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:
         }
         else {
             const table = edgeFunctionToTable(edgeFunction);
-            return {statement, table};
+            if (urlSearchParams.id) {
+                return {statement, table, id: urlSearchParams.id};
+            }
+            else {
+                return {statement, table};
+            }
         }
     }
     else {
@@ -115,7 +120,7 @@ export function translateDBResponseDTOToDBQueryDTO(dbResponseDTO:DBResponseDTO<T
 }
 
 
-export function compileToDBQuery(client:Client,DBqueryDTO:DBQueryDTO):DBQuery<Client,T>{
+export function compileToDBQuery(DBqueryDTO:DBQueryDTO,client:Client):DBQuery<Client,T>{
     const {statement, table, id, cacheTable, rows,SQLFunction} = DBqueryDTO;
     if (id) {
         // Thunk approach because of the way supabase works otherwise a SQL string would fit better
@@ -291,17 +296,37 @@ export function translateTokenizedDTOToDBQueryDTO(hexCoder:HexCoder,tokenizedDTO
     }
 }
 
-export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):Promise<LLMRequestDTO>{
+export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>, egdeFunction:string, step:string):Promise<LLMRequestDTO>{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to LLM request DTO');
     }
     else {
-        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCoder,d.hex_content, d.category), metadata:{contentId: d.id}}));
+        switch(egdeFunction){
+            case 'summarize-links': {
+                return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCoder,d.hex_content, d.category), metadata:{contentId: d.id}}));
+            }
+            case 'modify-questions': {
+                switch(step){
+                    case 'modify-questions': {
+                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForModifyingQuestions(hexCoder,d.hex_question, d.category), metadata:{match_id: d.id}}));
+                    }
+                    case 'answer-questions':{
+                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCoder,d.hex_question, d.hex_modified_question, d.category), metadata:{modified_question_id: d.id}}));
+                    }
+                    default: {
+                        throw new Error('Wrong step');
+                    }
+                }
+            }
+            default: {
+                throw new Error('Wrong edge function');
+            }
+        }
     }
 }
 
-export function compileToLLMModel(aiClient:AIClient,llmRequestDTO:LLMRequestDTO):LLMModel{
+export function compileToLLMModel(llmRequestDTO:LLMRequestDTO,aiClient:AIClient):LLMModel{
     return {client: aiClient, LLMRequestDTO:llmRequestDTO, invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>invoke(aiClient,singlellmRequestDTO)};
 }
 
@@ -321,20 +346,27 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
     }
 }
 
-export function translateLLMResponseDTOToDBQueryDTO(hexCoder:HexCoder,llmResponseDTO:LLMResponseDTO):DBQueryDTO{
-    if (isSingleLLMResponseDTO(llmResponseDTO)) {
-        const {response, metadata} = llmResponseDTO;
-        if (metadata) {
-            return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows: [{content_id: metadata.contentId, hex_summary:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
+export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDTO,hexCoder:HexCoder,edgeFunction:string,step:string):DBQueryDTO{
+    switch(edgeFunction){
+        case 'summarize-links': {
+            if (isSingleLLMResponseDTO(llmResponseDTO)) {
+                const {response, metadata} = llmResponseDTO;
+                if (metadata) {
+                    return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows: [{content_id: metadata.contentId, hex_summary:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
+                }
+                else {
+                    throw new Error('Metadata is required');
+                }
+            }
+            else {
+                const rows = llmResponseDTO.map((llmResponseDTO)=>({content_id: llmResponseDTO.metadata.contentId,
+                     hex_summary:hexCoder.encode(llmResponseDTO.response)}));
+                return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows, SQLFunction: 'insert_into_summaries'};
+            }           
         }
-        else {
-            throw new Error('Metadata is required');
+        default: {
+            throw new Error('Wrong edge function');
         }
-    }
-    else {
-        const rows = llmResponseDTO.map((llmResponseDTO)=>({content_id: llmResponseDTO.metadata.contentId,
-             hex_summary:hexCoder.encode(llmResponseDTO.response)}));
-        return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows, SQLFunction: 'insert_into_summaries'};
     }
 }
 

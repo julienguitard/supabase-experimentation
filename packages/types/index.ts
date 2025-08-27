@@ -5,7 +5,7 @@ import type {Anthropic} from 'npm:@anthropic-ai/sdk';
 import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
 
-// Utility types
+// Utility generic types
 export type Option<T> = T | null;
 
 export type OneOrMany<T> = T | T[];
@@ -60,10 +60,6 @@ export type User = {
 
 // Business and data types
 
-export type Message<T> = {
-    role: string;
-    content: T;
-}
 
 export type RequestDTO = {
     method:string;
@@ -130,31 +126,36 @@ export type SingleTokenizedDTO = SingleTokenizedDTOWithFragment | SingleTokenize
 
 export type TokenizedDTO = OneOrMany<SingleTokenizedDTO>;
 
-export type SingleLLMRequestDTO = {
+export type Message<T> = {
+    role: string;
+    content: T;
+}
+
+export type SingleLLMRequestDTO<M extends Record<string,string>> = {
     model: string;
     maxToken: number;
     temperature?: number;
     messages: Message<string>[];
-    metadata?: Record<string, string>;
+    metadata?:M;
 }
 
-export type LLMRequestDTO = OneOrMany<SingleLLMRequestDTO>;
+export type LLMRequestDTO<M extends Record<string,string>> = OneOrMany<SingleLLMRequestDTO<M>>;
 
 export type AIClient = OpenAI | Anthropic | DeepSeek;
 
-export type LLMModel = {
+export type LLMModel<M extends Record<string,string>> = {
     client: AIClient;
-    LLMRequestDTO:LLMRequestDTO;
-    invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
+    LLMRequestDTO:LLMRequestDTO<M>;
+    invoke: (singleLLMRequestDTO:SingleLLMRequestDTO<M>)=>Promise<string>;
 }
 
-export type SingleLLMResponseDTO = {
+export type SingleLLMResponseDTO<M extends Record<string,string>> = {
     response: string;
     response_type?: string;
-    metadata?: Record<string, string>;
+    metadata?: M;
 }
 
-export type LLMResponseDTO = OneOrMany<SingleLLMResponseDTO>;
+export type LLMResponseDTO<M extends Record<string,string>> = OneOrMany<SingleLLMResponseDTO<M>>;
 
 export type SingleEmbeddingRequestDTO = {
     model: string;
