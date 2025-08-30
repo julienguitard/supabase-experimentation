@@ -69,23 +69,23 @@ export type RequestDTO = {
     body?: ReturnType<Request["json"]>;
 }
 
-export type SingleCrawlableDTO = RequestDTO & {
+export type SingleScrapableDTO = RequestDTO & {
     linkId: string;
 }
 
-export type CrawlableDTO = OneOrMany<SingleCrawlableDTO>;
+export type ScrapableDTO = OneOrMany<SingleScrapableDTO>;
 
-export type SingleCrawledDTO = ResponseDTO & {
+export type SingleScrapedDTO = ResponseDTO & {
     linkId: string;
 }
 
-export type CrawlQuery = {
-    crawlableDTO: CrawlableDTO;
+export type ScrapeQuery = {
+    scrapableDTO: ScrapableDTO;
     browserlessClient?: BrowserlessClient;
     browser?: Browser;
 }
 
-export type CrawledDTO = OneOrMany<SingleCrawledDTO>;
+export type ScrapedDTO = OneOrMany<SingleScrapedDTO>;
 
 export type SingleTokenizableDTOWithFragment = {
     fragment_id: string,

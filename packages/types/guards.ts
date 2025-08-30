@@ -2,14 +2,14 @@ import type { OpenAI} from "npm:@types/openai";
 import type {Anthropic} from 'npm:@anthropic-ai/sdk';
 import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
-import type {  AIClient, CrawlableDTO, CrawledDTO, LLMRequestDTO, LLMResponseDTO,   SingleCrawlableDTO, SingleCrawledDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO} from "./index.ts";
+import type {  AIClient, ScrapableDTO, ScrapedDTO, LLMRequestDTO, LLMResponseDTO,   SingleScrapableDTO, SingleScrapedDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO} from "./index.ts";
 
-export function isSingleCrawlableDTO(crawlableDTO:CrawlableDTO):crawlableDTO is SingleCrawlableDTO{
-    return 'url' in crawlableDTO;
+export function isSingleScrapableDTO(scrapableDTO:ScrapableDTO):scrapableDTO is SingleScrapableDTO{
+    return 'url' in scrapableDTO;
 }
 
-export function isSingleCrawledDTO(crawledDTO:CrawledDTO): crawledDTO is SingleCrawledDTO{
-    return 'linkId' in crawledDTO;
+export function isSingleScrapedDTO(scrapedDTO:ScrapedDTO): scrapedDTO is SingleScrapedDTO{
+    return 'linkId' in scrapedDTO;
 }
 
 export function isSingleTokenizableDTO(tokenizableDTO:TokenizableDTO):tokenizableDTO is SingleTokenizableDTO{

@@ -2,13 +2,12 @@
 
 -- Contents
 
-drop view if exists denormalized_contents;
+drop view if exists denormalized_contents cascade;
 
 create view denormalized_contents with (security_invoker = on) as
 (select
   c.id,
   c.created_at,
-  c.user_id,
   l.link_id,
   l.link_created_at,
   c.status,
@@ -32,7 +31,7 @@ from
 
 -- Summaries
 
-drop view if exists denormalized_summaries;
+drop view if exists denormalized_summaries cascade;
 
 create view denormalized_summaries with (security_invoker = on) as
 (select
@@ -57,6 +56,9 @@ from
       created_at as content_created_at,
       link_id,
       link_created_at,
+      status,
+      content,
+      error,
       url,
       category,
       user_id
@@ -67,7 +69,7 @@ from
 
 -- Fragments
 
-drop view if exists denormalized_contents_fragments;
+drop view if exists denormalized_contents_fragments cascade;
 
 create view denormalized_contents_fragments
 with
@@ -114,7 +116,7 @@ with
       ) c using (content_id)
   );
 
-drop view if exists denormalized_summaries_fragments;
+drop view if exists denormalized_summaries_fragments cascade;
 
 create view denormalized_summaries_fragments
 with
@@ -167,7 +169,7 @@ with
       ) s using (summary_id)
   );
 
-drop view if exists denormalized_questions_fragments;
+drop view if exists denormalized_questions_fragments cascade;
 
 create view denormalized_questions_fragments
 with
@@ -204,7 +206,7 @@ with
 
 -- Chunks
 
-drop view if exists denormalized_chunks;
+drop view if exists denormalized_chunks cascade;
 
 create view denormalized_chunks with (security_invoker = on) as
 (
@@ -234,7 +236,7 @@ create view denormalized_chunks with (security_invoker = on) as
     ) f using (fragment_id)
 );
 
-drop view if exists denormalized_contents_chunks;
+drop view if exists denormalized_contents_chunks cascade;
 
 create view denormalized_contents_chunks
 with
@@ -293,7 +295,7 @@ with
       ) co using (content_id)
   );
 
-drop view if exists denormalized_summaries_chunks;
+drop view if exists denormalized_summaries_chunks cascade;
 
 create view denormalized_summaries_chunks
 with
@@ -358,7 +360,7 @@ with
       ) s using (summary_id)
   );
 
-drop view if exists denormalized_questions_chunks;
+drop view if exists denormalized_questions_chunks cascade;
 
 create view denormalized_questions_chunks
 with
@@ -401,13 +403,13 @@ with
           question,
           user_id
         from
-          denormalized_questions
+          questions
       ) q using (question_id)
   );
 
 -- Vectors  
 
-drop view if exists denormalized_vectors;
+drop view if exists denormalized_vectors cascade;
 
 create view denormalized_vectors with (security_invoker = on) as
 (
@@ -416,7 +418,12 @@ create view denormalized_vectors with (security_invoker = on) as
     v.created_at,
     c.chunk_id,
     c.chunk_created_at,
-    v.embedding,
+    c.fragment_id,
+    c.fragment_created_at,
+    c.source_table,
+    c.source_column,
+    c.source_id,
+    v.embeddings,
     c.chunk,
     c.start_,
     c.end_,
@@ -426,15 +433,20 @@ create view denormalized_vectors with (security_invoker = on) as
     join (select
     id as chunk_id,
     created_at as chunk_created_at,
+    fragment_id,
+    fragment_created_at,
+    source_table,
+    source_column,
+    source_id,
     chunk,
     start_,
     end_,
     length_,
     user_id
-    from denormalized_chunks) c using (chunk_id);
+    from denormalized_chunks) c using (chunk_id)
 );
 
-drop view if exists denormalized_contents_vectors;
+drop view if exists denormalized_contents_vectors cascade;
 
 create view denormalized_contents_vectors with (security_invoker = on) as
 (
@@ -449,7 +461,7 @@ create view denormalized_contents_vectors with (security_invoker = on) as
     c.content_created_at,
     c.link_id,
     c.link_created_at,
-    v.embedding,
+    v.embeddings,
     v.chunk,
     v.start_,
     v.end_,
@@ -457,6 +469,8 @@ create view denormalized_contents_vectors with (security_invoker = on) as
     c.status,
     c.content,
     c.error,
+    c.url,
+    c.category,
     v.user_id
     from (select id,
     created_at,
@@ -465,7 +479,7 @@ create view denormalized_contents_vectors with (security_invoker = on) as
     fragment_id,
     fragment_created_at,
     source_id as content_id,
-    embedding,
+    embeddings,
     chunk,
     start_,
     end_,
@@ -482,10 +496,10 @@ create view denormalized_contents_vectors with (security_invoker = on) as
     error, 
     url, 
     category, 
-    user_id from denormalized_contents) c using (content_id);
+    user_id from denormalized_contents) c using (content_id)
 );
 
-drop view if exists denormalized_summaries_vectors;
+drop view if exists denormalized_summaries_vectors cascade;
 
 create view denormalized_summaries_vectors with (security_invoker = on) as
 (
@@ -502,7 +516,7 @@ create view denormalized_summaries_vectors with (security_invoker = on) as
     s.content_created_at,
     s.link_id,
     s.link_created_at,
-    v.embedding,
+    v.embeddings,
     v.chunk,
     v.start_,
     v.end_,
@@ -521,7 +535,7 @@ create view denormalized_summaries_vectors with (security_invoker = on) as
     fragment_id,
     fragment_created_at,
     source_id as summary_id,
-    embedding,
+    embeddings,
     chunk,
     start_,
     end_,
@@ -541,10 +555,10 @@ create view denormalized_summaries_vectors with (security_invoker = on) as
         error,
          url,
           category, 
-          user_id from denormalized_summaries) s using (summary_id);
+          user_id from denormalized_summaries) s using (summary_id)
 );
 
-drop view if exists denormalized_questions_vectors;
+drop view if exists denormalized_questions_vectors cascade;
 
 create view denormalized_questions_vectors with (security_invoker = on) as
 (
@@ -557,7 +571,7 @@ create view denormalized_questions_vectors with (security_invoker = on) as
     v.fragment_created_at,
     q.question_id,
     q.question_created_at,
-    v.embedding,
+    v.embeddings,
     v.chunk,
     v.start_,
     v.end_,
@@ -571,7 +585,7 @@ create view denormalized_questions_vectors with (security_invoker = on) as
     fragment_id,
     fragment_created_at,
     source_id as question_id,
-    embedding,
+    embeddings,
     chunk,
     start_,
     end_,
@@ -583,12 +597,12 @@ create view denormalized_questions_vectors with (security_invoker = on) as
     created_at as question_created_at,
     question,
     user_id
-    from denormalized_questions) q using (question_id);
+    from questions) q using (question_id)
 );
 
 -- Matches
 
-drop view if exists denormalized_matches;
+drop view if exists denormalized_matches cascade;
 
 create view denormalized_matches with (security_invoker = on) as
 (
@@ -612,7 +626,7 @@ create view denormalized_matches with (security_invoker = on) as
 
 -- Questions_matching_chunks
 
-drop view if exists denormalized_questions_matching_chunks;
+drop view if exists denormalized_questions_matching_chunks cascade;
 
 create view denormalized_questions_matching_chunks with (security_invoker = on) as
 (
@@ -621,8 +635,11 @@ create view denormalized_questions_matching_chunks with (security_invoker = on) 
     qmc.created_at,
     m.match_id,
     m.match_created_at,
+    m.question_id,
+    m.question_created_at,
     c.chunk_id,
     c.chunk_created_at,
+    m.question,
     c.chunk,
     c.start_,
     c.end_,
@@ -633,6 +650,7 @@ create view denormalized_questions_matching_chunks with (security_invoker = on) 
         id as match_id,
         created_at as match_created_at,
         question_id,
+        question_created_at,
         question,
         user_id
         from denormalized_matches
@@ -642,7 +660,7 @@ create view denormalized_questions_matching_chunks with (security_invoker = on) 
    
 -- Modified_questions
 
-drop view if exists denormalized_modified_questions;
+drop view if exists denormalized_modified_questions cascade;
 
 create view denormalized_modified_questions with (security_invoker = on) as
 (
@@ -662,17 +680,18 @@ create view denormalized_modified_questions with (security_invoker = on) as
             id as match_id,
             created_at as match_created_at,
             question_id,
+            question_created_at,
             question,
             user_id
         from
             denormalized_matches
-    ) m using (match_id);
+    ) m using (match_id)
 );
 
 
 -- Answers
 
-drop view if exists denormalized_answers;
+drop view if exists denormalized_answers cascade;
 
 create view denormalized_answers with (security_invoker = on) as
 (
@@ -697,6 +716,7 @@ create view denormalized_answers with (security_invoker = on) as
         match_id,
         match_created_at,
         question_id,
+        question_created_at,
         modified_question,
         question,
         user_id

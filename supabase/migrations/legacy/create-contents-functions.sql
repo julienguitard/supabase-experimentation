@@ -34,7 +34,7 @@ begin
                     id::uuid as link_id,     -- Get the link's UUID
                     url                      -- Get the link's URL
                 from
-                    links_to_crawl
+                    links_to_scrape
                 order by
                     random()                 -- Randomize the order of links
                 limit 5                      -- Limit to 5 links per run
@@ -57,7 +57,7 @@ begin
     with merged as (
         merge into contents t
         using tmp_contents_insert s
-        on t.link_id = s.link_id and t.created_at = now() -- A link can be crawled multiple times
+        on t.link_id = s.link_id and t.created_at = now() -- A link can be scraped multiple times
         when matched then do nothing
         when not matched by target then insert (id, created_at, link_id, status, content, error, user_id) values 
         (gen_random_uuid(), now(), s.link_id, s.status, decode(s.hex_content, 'hex'), decode(s.hex_error, 'hex'), auth.uid())

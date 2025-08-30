@@ -1,4 +1,4 @@
-import type { ContentsRowDTO, Option, SingleCrawledDTO, HexCoder } from "@types";
+import type { ContentsRowDTO, Option, SingleScrapedDTO, HexCoder } from "@types";
 import { createTextCoder, createHexCoder } from "../context-elements.ts";
 import { Tokenizer } from "../../../packages/types/index.ts";
 
@@ -26,7 +26,7 @@ export function edgeFunctionToStatement(edgeFunction:string,step?:string):string
 export function edgeFunctionToTable(edgeFunction:string,step?:string):Option<string>{
     switch (edgeFunction){
         case 'fetch-links':
-            return 'tmp_links_to_crawl';
+            return 'tmp_links_to_scrape';
         case 'summarize-links':
             return 'tmp_contents_to_summarize';
         case 'check-fragments':
@@ -92,14 +92,14 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
     }
 }
 
-export function translateSingleCrawledDTOToContentsRowDTO(
+export function translateSingleScrapedDTOToContentsRowDTO(
   hexCoder: HexCoder,
-  crawledDTO: SingleCrawledDTO
+  scrapedDTO: SingleScrapedDTO
 ): ContentsRowDTO {
   return {
-    link_id: crawledDTO.linkId,
-    status: crawledDTO.status,
-    hex_content: hexCoder.encode(crawledDTO.content),
+    link_id: scrapedDTO.linkId,
+    status: scrapedDTO.status,
+    hex_content: hexCoder.encode(scrapedDTO.content),
   };
 }
 

@@ -1,4 +1,5 @@
 -- links
+drop table if exists links cascade;
 
 create table if not exists links (
     id uuid not null default gen_random_uuid (),
@@ -11,14 +12,15 @@ create table if not exists links (
 ) tablespace pg_default;
 
 -- contents
+drop table if exists contents cascade;
 
 create table if not exists contents (
     id uuid not null default gen_random_uuid (),
     created_at timestamp with time zone not null default now(),
     link_id uuid not null,
     status text not null,
-    content bytea not null,
-    error bytea not null,
+    content bytea,
+    error bytea,
     user_id uuid not null,
     constraint contents_pkey primary key (id),
     constraint contents_link_id_fkey foreign key (link_id) references links (id),
@@ -26,6 +28,7 @@ create table if not exists contents (
 ) tablespace pg_default;
 
 -- summaries
+drop table if exists summaries cascade;
 
 create table if not exists summaries (
     id uuid not null default gen_random_uuid (),
@@ -40,6 +43,8 @@ create table if not exists summaries (
 
 -- questions
 
+drop table if exists questions cascade;
+
 create table if not exists questions (
     id uuid not null default gen_random_uuid (),
     created_at timestamp with time zone not null default now(),
@@ -50,6 +55,8 @@ create table if not exists questions (
 ) tablespace pg_default;
 
 -- fragments
+
+drop table if exists fragments cascade;
 
 create table if not exists fragments (
     id uuid not null default gen_random_uuid (),
@@ -63,6 +70,8 @@ create table if not exists fragments (
 ) tablespace pg_default;
 
 -- chunks
+
+drop table if exists chunks cascade;
 
 create table if not exists chunks (
     id uuid not null default gen_random_uuid (),
@@ -80,11 +89,13 @@ create table if not exists chunks (
 
 -- vectors
 
+drop table if exists vectors cascade;
+
 create table if not exists vectors (
     id uuid not null default gen_random_uuid (),
     created_at timestamp with time zone not null default now(),
     chunk_id uuid not null,
-    embedding vector(1536) not null,
+    embeddings vector(1536) not null,
     user_id uuid not null,
     constraint vectors_pkey primary key (id),
     constraint vectors_chunk_id_fkey foreign key (chunk_id) references chunks (id),
@@ -92,6 +103,8 @@ create table if not exists vectors (
 ) tablespace pg_default;
 
 -- matches
+
+drop table if exists matches cascade;
 
 create table if not exists matches (
     id uuid not null default gen_random_uuid (),
@@ -104,6 +117,8 @@ create table if not exists matches (
 ) tablespace pg_default;
 
 -- questions_matching_chunks
+
+drop table if exists questions_matching_chunks cascade;
 
 create table if not exists questions_matching_chunks (
     id uuid not null default gen_random_uuid (),
@@ -119,6 +134,8 @@ create table if not exists questions_matching_chunks (
 
 -- modified_questions
 
+drop table if exists modified_questions cascade;
+
 create table if not exists modified_questions (
     id uuid not null default gen_random_uuid (),
     created_at timestamp with time zone not null default now(),
@@ -131,6 +148,8 @@ create table if not exists modified_questions (
 ) tablespace pg_default;
 
 -- answers
+
+drop table if exists answers cascade;
 
 create table if not exists answers (
     id uuid not null default gen_random_uuid (),

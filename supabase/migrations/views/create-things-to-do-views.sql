@@ -1,13 +1,13 @@
 -- Links
 
-drop view if exist links_to_scrape;
+drop view if exists links_to_scrape;
 
 create view links_to_scrape with (security_invoker = on) as
 (select id,
         created_at,
         url,
         category,
-        user_id,
+        user_id
         from (select l.id,
                         l.created_at,
                         l.url,
@@ -19,9 +19,22 @@ create view links_to_scrape with (security_invoker = on) as
         where is_to_scrape
 );
 
+create view links_to_scrope_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      links_to_scrape
+    order by
+      random()
+    limit
+      3
+  );
+
 -- Contents
 
-drop view if exist contents_to_summarize;
+drop view if exists contents_to_summarize;
 
 create view contents_to_summarize with (security_invoker = on) as
 (select id,
@@ -29,7 +42,7 @@ create view contents_to_summarize with (security_invoker = on) as
         status,
         content,
         error,
-        user_id,
+        user_id
         from (select c.id,
                 c.created_at,
                 c.status,
@@ -41,29 +54,59 @@ create view contents_to_summarize with (security_invoker = on) as
                 left join latest_links_summaries s on s.content_id = c.id)
         where is_to_summarize);
 
+drop view if exists contents_to_summarize_extract;
+
+create view contents_to_summarize_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      contents_to_summarize
+    order by
+      random()
+    limit
+      3
+  );
+
 -- Summaries
 
 -- Questions
 
-drop view if exist questions_to_answer;
+drop view if exists questions_to_answer;
 
 create view questions_to_answer with (security_invoker = on) as
 (select id,
         created_at,
         question,
-        user_id,
+        user_id
         from (select q.id,
                 q.created_at,
                 q.question,
                 q.user_id,
                 case when a.id is null then true else false end as is_to_answer
                 from questions q
-                left join latest_answers a on a.question_id = q.id)
+                left join latest_questions_answers a on a.question_id = q.id)
         where is_to_answer);
+
+drop view if exists questions_to_answer_extract;
+
+create view questions_to_answer_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      questions_to_answer
+    order by
+      random()
+    limit
+      3
+  );
 
 -- Fragments
 
-drop views if exist contents_to_fragment;
+drop view if exists contents_to_fragment;
 
 create view contents_to_fragment with (security_invoker = on) as
 (select id,
@@ -71,7 +114,7 @@ create view contents_to_fragment with (security_invoker = on) as
         status,
         content,
         error,
-        user_id,
+        user_id
         from (select c.id,
                 c.created_at,
                 c.status,
@@ -80,40 +123,40 @@ create view contents_to_fragment with (security_invoker = on) as
                 c.user_id,
                 case when f.id is null then true else false end as is_to_fragment
                 from contents c
-                left join denormalized_fragments_with_contents f on f.content_id = c.id)
+                left join latest_links_fragments f on f.content_id = c.id)
         where is_to_fragment);
 
-drop view if exist summaries_to_fragment;
+drop view if exists summaries_to_fragment;
 
 
 create view summaries_to_fragment with (security_invoker = on) as
 (select id,
         created_at,
         summary,
-        user_id,
+        user_id
         from (select s.id,
                 s.created_at,
                 s.summary,
                 s.user_id,
                 case when f.id is null then true else false end as is_to_fragment
                 from summaries s
-                left join denormalized_fragments_with_summaries f on f.summary_id = s.id)
+                left join latest_summaries_fragments f on f.summary_id = s.id)
         where is_to_fragment);
 
-drop view if exist questions_to_fragment;
+drop view if exists questions_to_fragment;
 
 create view questions_to_fragment with (security_invoker = on) as
 (select id,
         created_at,
         question,
-        user_id,
+        user_id
         from (select q.id,
                 q.created_at,
                 q.question,
                 q.user_id,
                 case when f.id is null then true else false end as is_to_fragment
                 from questions q
-                left join denormalized_fragments_with_questions f on f.question_id = q.id)
+                left join latest_questions_fragments f on f.question_id = q.id)
         where is_to_fragment);
 
 drop view if exists entities_to_fragment;
@@ -122,47 +165,71 @@ create view entities_to_fragment with (security_invoker = on) as
 (select 'contents' as source_table,
         'content' as source_column,
         id as source_id,
-        user_id,
+        user_id
         from contents_to_fragment
         union all
         select 'summaries' as source_table,
         'summary' as source_column,
         id as source_id,
-        user_id,
+        user_id
         from summaries_to_fragment
         union all
         select 'questions' as source_table,
         'question' as source_column,
         id as source_id,
-        user_id,
+        user_id
         from questions_to_fragment
 );
 
- drop view if exist fragments_to_chunk;
+drop view if exists entities_to_fragment_extract;
+
+create view entities_to_fragment_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      entities_to_fragment
+  );
+
+drop view if exists fragments_to_chunk;
 
  create view fragments_to_chunk with (security_invoker = on) as
  (select id,
         created_at,
-        fragment,
-        user_id,
+        user_id
         from (select f.id,
                 f.created_at,
-                f.fragment,
                 f.user_id,
                 case when c.id is null then true else false end as is_to_chunk
                 from fragments f
                 left join latest_fragments_chunks c on c.fragment_id = f.id)
         where is_to_chunk);
 
+drop view if exists fragments_to_chunk_extract;
+
+create view fragments_to_chunk_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      fragments_to_chunk
+    order by
+      random()
+    limit
+      10
+  );
+
 -- Chunks
 
-drop view if exist chunks_to_vectorize;
+drop view if exists chunks_to_vectorize;
 
 create view chunks_to_vectorize with (security_invoker = on) as
 (select id,
         created_at,
         chunk,
-        user_id,
+        user_id
         from (select c.id,
                 c.created_at,
                 c.chunk,
@@ -172,6 +239,21 @@ create view chunks_to_vectorize with (security_invoker = on) as
                 left join latest_fragments_vectors v on v.chunk_id = c.id)
         where is_to_vectorize);
 
+drop view if exists chunks_to_vectorize_extract;
+
+create view chunks_to_vectorize_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      chunks_to_vectorize
+    order by
+      random()
+    limit
+      5
+  );
+  
 -- Vectors  
 
 -- Matches

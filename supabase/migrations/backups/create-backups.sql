@@ -10,7 +10,7 @@ create table links_backup as (
   select * from links
 );
 
-enable row level security on links;
+alter table links enable row level security;
 
 create policy "authenticated_all"
 on "public"."links"
@@ -33,7 +33,7 @@ create table contents_backup as (
   select * from contents
 );
 
-enable row level security on contents;
+alter table contents enable row level security;
 
 create policy "authenticated_all"
 on "public"."contents"
@@ -56,7 +56,7 @@ create table summaries_backup as (
   select * from summaries
 );
 
-enable row level security on summaries;
+alter table summaries enable row level security;
 
 create policy "authenticated_all"
 on "public"."summaries"
@@ -79,7 +79,7 @@ create table questions_backup as (
   select * from questions
 );
 
-enable row level security on questions;
+alter table questions enable row level security;
 
 create policy "authenticated_all"
 on "public"."questions"
@@ -102,7 +102,7 @@ create table fragments_backup as (
   select * from fragments
 );
 
-enable row level security on fragments;
+alter table fragments enable row level security;
 
 create policy "authenticated_all"
 on "public"."fragments"
@@ -125,7 +125,7 @@ create table chunks_backup as (
   select * from chunks
 );
 
-enable row level security on chunks;
+alter table chunks enable row level security;
 
 create policy "authenticated_all"
 on "public"."chunks"
@@ -148,7 +148,7 @@ create table vectors_backup as (
   select * from vectors
 );
 
-enable row level security on vectors;
+alter table vectors enable row level security;
 
 create policy "authenticated_all"
 on "public"."vectors"
@@ -171,7 +171,7 @@ create table matches_backup as (
   select * from matches
 );
 
-enable row level security on matches;
+alter table matches enable row level security;
 
 create policy "authenticated_all"
 on "public"."matches"
@@ -194,7 +194,7 @@ create table questions_matching_chunks_backup as (
   select * from questions_matching_chunks
 );
 
-enable row level security on questions_matching_chunks;
+alter table questions_matching_chunks enable row level security;
 
 create policy "authenticated_all"
 on "public"."questions_matching_chunks"
@@ -217,7 +217,7 @@ create table modified_questions_backup as (
   select * from modified_questions
 );
 
-enable row level security on modified_questions;
+alter table modified_questions enable row level security;
 
 create policy "authenticated_all"
 on "public"."modified_questions"
@@ -240,7 +240,7 @@ create table answers_backup as (
   select * from answers
 );
 
-enable row level security on answers;
+alter table answers enable row level security;
 
 create policy "authenticated_all"
 on "public"."answers"

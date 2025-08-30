@@ -113,7 +113,6 @@ create view latest_fragments_chunks with (security_invoker = on) as
     select
     id,
     created_at,
-    user_id,
     fragment_id,
     fragment_created_at,
     source_table,
@@ -138,9 +137,6 @@ create view latest_links_chunks with (security_invoker = on) as
     created_at,
     fragment_id,
     fragment_created_at,
-    source_table,
-    source_column,
-    source_id,
     content_id,
     content_created_at,
     link_id,
@@ -155,7 +151,7 @@ create view latest_links_chunks with (security_invoker = on) as
     url,
     category,
     user_id,
-    rank() over (partition by link_id order by content_created_at, fragment_created_at created_at desc) as rn
+    rank() over (partition by link_id order by content_created_at, fragment_created_at, created_at desc) as rn
     from denormalized_contents_chunks)
     where rn = 1
 );
@@ -169,9 +165,6 @@ create view latest_summaries_chunks with (security_invoker = on) as
     created_at,
     fragment_id,
     fragment_created_at,
-    source_table,
-    source_column,
-    source_id,
     summary_id,
     summary_created_at,
     content_id,
@@ -187,7 +180,7 @@ create view latest_summaries_chunks with (security_invoker = on) as
     url,
     category,
     user_id,
-    rank() over (partition by link_id order by content_created_at, summary_created_at, fragment_created_at created_at desc) as rn
+    rank() over (partition by link_id order by content_created_at, summary_created_at, fragment_created_at,created_at desc) as rn
     from denormalized_summaries_chunks)
     where rn = 1
 );
@@ -201,14 +194,11 @@ create view latest_questions_chunks with (security_invoker = on) as
     created_at,
     fragment_id,
     fragment_created_at,
-    source_table,
-    source_column,
-    source_id,
     question_id,
     question_created_at,
     question,
     user_id,
-    rank() over (partition by question_id order by fragment_created_at created_at desc) as rn
+    rank() over (partition by question_id order by fragment_created_at, created_at desc) as rn
     from denormalized_questions_chunks)
     where rn = 1
 );
@@ -229,7 +219,7 @@ create view latest_fragments_vectors with (security_invoker = on) as
     source_table,
     source_column,
     source_id,
-    embedding,
+    embeddings,
     chunk,
     start_,
     end_,
@@ -251,14 +241,11 @@ create view latest_links_vectors with (security_invoker = on) as
     chunk_created_at,
     fragment_id,
     fragment_created_at,
-    source_table,
-    source_column,
-    source_id,
     content_id,
     content_created_at,
     link_id,
     link_created_at,
-    embedding,
+    embeddings,
     chunk,
     start_,
     end_,
@@ -269,7 +256,7 @@ create view latest_links_vectors with (security_invoker = on) as
     url,
     category,
     user_id,
-    rank() over (partition by link_id order by content_created_at, fragment_created_at chunk_created_at,created_at desc) as rn
+    rank() over (partition by link_id order by content_created_at, fragment_created_at, chunk_created_at,created_at desc) as rn
     from denormalized_contents_vectors)
     where rn = 1
 );
@@ -285,16 +272,13 @@ create view latest_summaries_vectors with (security_invoker = on) as
     chunk_created_at,
     fragment_id,
     fragment_created_at,
-    source_table,
-    source_column,
-    source_id,
     summary_id,
     summary_created_at,
     content_id,
     content_created_at,
     link_id,
     link_created_at,
-    embedding,
+    embeddings,
     chunk,
     start_,
     end_,
@@ -306,7 +290,7 @@ create view latest_summaries_vectors with (security_invoker = on) as
     url,
     category,
     user_id,
-    rank() over (partition by link_id order by content_created_at, summary_created_at, fragment_created_at chunk_created_at,created_at desc) as rn
+    rank() over (partition by link_id order by content_created_at, summary_created_at, fragment_created_at, chunk_created_at,created_at desc) as rn
     from denormalized_summaries_vectors)
     where rn = 1
 );
@@ -322,14 +306,16 @@ create view latest_questions_vectors with (security_invoker = on) as
     chunk_created_at,
     fragment_id,
     fragment_created_at,
-    source_table,
-    source_column,
-    source_id,
     question_id,
     question_created_at,
+    embeddings,
+    chunk,
+    start_,
+    end_,
+    length_,
     question,   
     user_id,
-    rank() over (partition by question_id order by fragment_created_at chunk_created_at,created_at desc) as rn
+    rank() over (partition by question_id order by fragment_created_at, chunk_created_at,created_at desc) as rn
     from denormalized_questions_vectors)
     where rn = 1
 );
@@ -349,7 +335,7 @@ create view latest_questions_matches with (security_invoker = on) as
     chunks,
     user_id,
     rank() over (partition by question_id order by created_at desc) as rn
-    from denormalized_matches_with_chunks_arrays)
+    from denormalized_questions_matching_chunks_arrays)
     where rn = 1
 );
 -- Questions matching chunks
@@ -387,8 +373,11 @@ create view latest_questions_answers with (security_invoker = on) as
     modified_question_created_at,
     match_id,
     match_created_at,
+    question_id,
+    question_created_at,
     answer,
     modified_question,
+    question,
     user_id,
     rank() over (partition by question_id order by match_created_at, modified_question_created_at, created_at desc) as rn
     from denormalized_answers)

@@ -5,7 +5,7 @@ create table if not exists links_backup as (
     where false
 );
 
-insert into links select * from links_backup;
+insert into links select id, created_at, url, category, user_id from links_backup;
 
 -- contents
 
@@ -14,7 +14,7 @@ create table if not exists contents_backup as (
     where false
 );
 
-insert into contents select * from contents_backup;
+insert into contents select id, created_at, link_id, status, content, error, user_id from contents_backup;
 
 -- summaries
 
@@ -23,7 +23,7 @@ create table if not exists summaries_backup as (
     where false
 );
 
-insert into summaries select * from summaries_backup;
+insert into summaries select id, created_at, content_id, summary, user_id from summaries_backup;
 
 -- questions
 
@@ -32,7 +32,7 @@ create table if not exists questions_backup as (
     where false
 );
 
-insert into questions select * from questions_backup;
+insert into questions select id, created_at, question, user_id from questions_backup;
 
 -- fragments
 
@@ -50,16 +50,16 @@ create table if not exists chunks_backup as (
     where false
 );
 
-insert into chunks select * from chunks_backup;
+insert into chunks select id, created_at, fragment_id, chunk, start_, end_, length_, user_id from chunks_backup;
 
 -- vectors
 
 create table if not exists vectors_backup as (
-    select id, created_at, chunk_id, embedding, user_id from vectors
+    select id, created_at, chunk_id, embeddings, user_id from vectors
     where false
 );
 
-insert into vectors select * from vectors_backup;
+insert into vectors select id, created_at, chunk_id, embeddings, user_id from vectors_backup;
 
 -- matches
 
@@ -68,7 +68,7 @@ create table if not exists matches_backup as (
     where false
 );
 
-insert into matches select * from matches_backup;
+insert into matches select id, created_at, question_id, user_id from matches_backup;
 
 -- questions_matching_chunks
 
@@ -77,7 +77,7 @@ create table if not exists questions_matching_chunks_backup as (
     where false
 );
 
-insert into questions_matching_chunks select * from questions_matching_chunks_backup;
+insert into questions_matching_chunks select id, created_at, match_id, chunk_id, user_id from questions_matching_chunks_backup;
 
 -- modified_questions
 
@@ -86,6 +86,8 @@ create table if not exists modified_questions_backup as (
     where false
 );
 
+insert into modified_questions select id, created_at, match_id, modified_question, user_id from modified_questions_backup;
+
 -- answers
 
 create table if not exists answers_backup as (
@@ -93,4 +95,4 @@ create table if not exists answers_backup as (
     where false
 );
 
-insert into answers select * from answers_backup;
+insert into answers select id, created_at, modified_question_id, answer, user_id from answers_backup;

@@ -4,17 +4,17 @@ drop table if exists links_insert_buffer cascade;
 drop table if exists links_update_buffer cascade;
 drop table if exists links_delete_buffer cascade;
 
-create table links_insert_buffer (
+create table links_insert_buffer as (
     select id, created_at, url, category, user_id from links
     where false
 );
 
-create table links_update_buffer (
+create table links_update_buffer as (
     select id, created_at, url, category, user_id from links
     where false
 );
 
-create table links_delete_buffer (
+create table links_delete_buffer as (
     select id, created_at, url, category from links
     where false
 );
@@ -77,7 +77,7 @@ create table chunks_insert_buffer as (
 drop table if exists vectors_insert_buffer cascade;
 
 create table vectors_insert_buffer as (
-  select id, created_at, chunk_id, embedding, user_id from vectors
+  select id, created_at, chunk_id, embeddings, user_id from vectors
   where false
 );
 

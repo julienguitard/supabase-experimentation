@@ -1,9 +1,9 @@
 -- Drop views
-drop view if exists links_to_crawl cascade;
+drop view if exists links_to_scrape cascade;
 
--- Create view to find links that haven't been crawled yet
-create view links_to_crawl with (security_invoker = on) as (
--- Query to find links that haven't been crawled yet
+-- Create view to find links that haven't been scraped yet
+create view links_to_scrape with (security_invoker = on) as (
+-- Query to find links that haven't been scraped yet
 select
   id,
   created_at,
@@ -21,7 +21,7 @@ from
       case
         when c.id is not null then 1
         else 0
-      end as crawled
+      end as scraped
     from
       links l
       left join (
@@ -41,21 +41,21 @@ from
               from
                 (created_at)
             )
-          ) < 86400 -- Only consider links that haven't been crawled in the last 24 hours
+          ) < 86400 -- Only consider links that haven't been scraped in the last 24 hours
       ) c using (id)
-  ) as uncrawled_links
+  ) as unscraped_links
 where
-  crawled = 0 -- Only consider links that haven't been crawled yet
+  scraped = 0 -- Only consider links that haven't been scraped yet
 );
 
--- Create a shorter view to find a random link that hasn't been crawled yet, for scalability
-create view tmp_links_to_crawl
+-- Create a shorter view to find a random link that hasn't been scraped yet, for scalability
+create view tmp_links_to_scrape
 with
   (security_invoker = on) as (
     select
       *
     from
-      links_to_crawl
+      links_to_scrape
     order by
       random()
     limit
