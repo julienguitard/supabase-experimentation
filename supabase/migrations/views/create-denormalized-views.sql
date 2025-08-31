@@ -204,6 +204,35 @@ with
       ) q using (question_id)
   );
 
+
+drop view if exists denormalized_entities_fragments cascade;
+
+create view denormalized_entities_fragments with (security_invoker = on) as
+(
+    select
+    id,
+    created_at,
+    content as fragment,
+    user_id
+    from denormalized_contents_fragments
+    union all
+    select
+    id,
+    created_at,
+    summary as fragment,
+    user_id
+    from denormalized_summaries_fragments
+    union all 
+    select
+    id,
+    created_at,
+    question as fragment,
+    user_id
+    from denormalized_questions_fragments
+  );
+
+
+
 -- Chunks
 
 drop view if exists denormalized_chunks cascade;

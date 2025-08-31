@@ -1,6 +1,6 @@
 -- Links
 
-drop view if exists links_to_scrape;
+drop view if exists links_to_scrape cascade;
 
 create view links_to_scrape with (security_invoker = on) as
 (select id,
@@ -18,8 +18,9 @@ create view links_to_scrape with (security_invoker = on) as
                     left join latest_links_contents c on c.link_id = l.id)
         where is_to_scrape
 );
+drop view if exists links_to_scrape_extract;
 
-create view links_to_scrope_extract
+create view links_to_scrape_extract
 with
   (security_invoker = on) as (
     select
@@ -34,14 +35,14 @@ with
 
 -- Contents
 
-drop view if exists contents_to_summarize;
+drop view if exists contents_to_summarize cascade;
 
 create view contents_to_summarize with (security_invoker = on) as
 (select id,
         created_at,
         status,
-        content,
-        error,
+        encode(content,'hex') as hex_content,
+        encode(error,'hex') as hex_error,
         user_id
         from (select c.id,
                 c.created_at,
@@ -73,12 +74,12 @@ with
 
 -- Questions
 
-drop view if exists questions_to_answer;
+drop view if exists questions_to_answer cascade;
 
 create view questions_to_answer with (security_invoker = on) as
 (select id,
         created_at,
-        question,
+        encode(question,'hex') as hex_question,
         user_id
         from (select q.id,
                 q.created_at,
@@ -106,14 +107,12 @@ with
 
 -- Fragments
 
-drop view if exists contents_to_fragment;
+drop view if exists contents_to_fragment cascade;
 
 create view contents_to_fragment with (security_invoker = on) as
 (select id,
         created_at,
         status,
-        content,
-        error,
         user_id
         from (select c.id,
                 c.created_at,
@@ -126,13 +125,11 @@ create view contents_to_fragment with (security_invoker = on) as
                 left join latest_links_fragments f on f.content_id = c.id)
         where is_to_fragment);
 
-drop view if exists summaries_to_fragment;
-
+drop view if exists summaries_to_fragment cascade;
 
 create view summaries_to_fragment with (security_invoker = on) as
 (select id,
         created_at,
-        summary,
         user_id
         from (select s.id,
                 s.created_at,
@@ -143,12 +140,11 @@ create view summaries_to_fragment with (security_invoker = on) as
                 left join latest_summaries_fragments f on f.summary_id = s.id)
         where is_to_fragment);
 
-drop view if exists questions_to_fragment;
+drop view if exists questions_to_fragment cascade;
 
 create view questions_to_fragment with (security_invoker = on) as
 (select id,
         created_at,
-        question,
         user_id
         from (select q.id,
                 q.created_at,
@@ -159,7 +155,7 @@ create view questions_to_fragment with (security_invoker = on) as
                 left join latest_questions_fragments f on f.question_id = q.id)
         where is_to_fragment);
 
-drop view if exists entities_to_fragment;
+drop view if exists entities_to_fragment cascade;
 
 create view entities_to_fragment with (security_invoker = on) as
 (select 'contents' as source_table,
@@ -192,17 +188,19 @@ with
       entities_to_fragment
   );
 
-drop view if exists fragments_to_chunk;
+drop view if exists fragments_to_chunk cascade;
 
  create view fragments_to_chunk with (security_invoker = on) as
  (select id,
         created_at,
+        encode(fragment,'hex') as hex_fragment,
         user_id
         from (select f.id,
                 f.created_at,
+                f.fragment,
                 f.user_id,
                 case when c.id is null then true else false end as is_to_chunk
-                from fragments f
+                from denormalized_entities_fragments f
                 left join latest_fragments_chunks c on c.fragment_id = f.id)
         where is_to_chunk);
 
@@ -223,7 +221,7 @@ with
 
 -- Chunks
 
-drop view if exists chunks_to_vectorize;
+drop view if exists chunks_to_vectorize cascade;
 
 create view chunks_to_vectorize with (security_invoker = on) as
 (select id,

@@ -104,7 +104,7 @@ export function translateDBResponseDTOToDBQueryDTO(dbResponseDTO:DBResponseDTO<T
             switch(step){
                 case 'insert-fragments': {
                     return {statement:'insert', 
-                        cacheTable: 'tmp_fragments_insert',
+                        cacheTable: 'fragments_insert_buffer',
                         rows: dbResponseDTO.data.map((row)=>{return row}), 
                         SQLFunction: 'insert_into_fragments'}
                 }
@@ -245,15 +245,15 @@ export function translateScrapedDTOToDBQueryDTO(hexCoder:HexCoder,scrapedDTO:Scr
     if (isSingleScrapedDTO(scrapedDTO)) {
         const {linkId, status, headers, body, error} = scrapedDTO;
         if (error) {
-            return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body), hex_error:hexCoder.encode(error)}], SQLFunction: 'insert_into_contents'};
+            return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body), hex_error:hexCoder.encode(error)}], SQLFunction: 'insert_into_contents'};
         }
         else {
-            return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body),hex_error:null}], SQLFunction: 'insert_into_contents'};
+            return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body),hex_error:null}], SQLFunction: 'insert_into_contents'};
         }
     }
     else {
         const rows = scrapedDTO.map((scrapedDTO)=>({link_id: scrapedDTO.linkId, status: scrapedDTO.status, hex_content:hexCoder.encode(scrapedDTO.body), hex_error:(scrapedDTO.error)?hexCoder.encode(scrapedDTO.error):null}));
-        return {statement: 'insert', cacheTable: 'tmp_contents_insert', rows, SQLFunction: 'insert_into_contents'};
+        return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows, SQLFunction: 'insert_into_contents'};
     }
     
 }
@@ -288,11 +288,11 @@ export function executeTokenizerExecutor(tokenizerExecutor:TokenizerExecutor):Op
 export function translateTokenizedDTOToDBQueryDTO(hexCoder:HexCoder,tokenizedDTO:TokenizedDTO):DBQueryDTO{
     if (isSingleTokenizedDTOWithHexFragment(tokenizedDTO)) {
         const {fragment_id, hex_chunk, start_, end_, length_} = tokenizedDTO;
-        return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows: [{fragment_id, hex_chunk, start_, end_, length_}], SQLFunction: 'insert_into_chunks'};
+        return {statement: 'insert', cacheTable: 'chunks_insert_buffer', rows: [{fragment_id, hex_chunk, start_, end_, length_}], SQLFunction: 'insert_into_chunks'};
     }
     else {
         const rows = tokenizedDTO.map((t)=>({fragment_id: t.fragment_id, hex_chunk: t.hex_chunk, start_: t.start_, end_: t.end_, length_: t.length_}));
-        return {statement: 'insert', cacheTable: 'tmp_chunks_insert', rows, SQLFunction: 'insert_into_chunks'};
+        return {statement: 'insert', cacheTable: 'chunks_insert_buffer', rows, SQLFunction: 'insert_into_chunks'};
     }
 }
 
@@ -352,7 +352,7 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
             if (isSingleLLMResponseDTO(llmResponseDTO)) {
                 const {response, metadata} = llmResponseDTO;
                 if (metadata) {
-                    return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows: [{content_id: metadata.contentId, hex_summary:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
+                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows: [{content_id: metadata.contentId, hex_summary:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
                 }
                 else {
                     throw new Error('Metadata is required');
@@ -361,7 +361,7 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
             else {
                 const rows = llmResponseDTO.map((llmResponseDTO)=>({content_id: llmResponseDTO.metadata.contentId,
                      hex_summary:hexCoder.encode(llmResponseDTO.response)}));
-                return {statement: 'insert', cacheTable: 'tmp_summaries_insert', rows, SQLFunction: 'insert_into_summaries'};
+                return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction: 'insert_into_summaries'};
             }           
         }
         default: {
@@ -404,11 +404,11 @@ export async function executeEmbeddingModel(embeddingModel:EmbeddingModel):Promi
 export function translateEmbeddingResponseDTOToDBQueryDTO(hexCoder:HexCoder,embeddingResponseDTO:EmbeddingResponseDTO):DBQueryDTO{
     if (isSingleEmbeddingResponseDTO(embeddingResponseDTO)) {
         const {embeddings, chunkId} = embeddingResponseDTO;
-        return {statement: 'insert', cacheTable: 'tmp_vectors_insert', rows: [{chunk_id: chunkId, embeddings: embeddings}], SQLFunction: 'insert_into_vectors'};
+        return {statement: 'insert', cacheTable: 'vectors_insert_buffer', rows: [{chunk_id: chunkId, embeddings: embeddings}], SQLFunction: 'insert_into_vectors'};
     }
     else {
         const rows = embeddingResponseDTO.map((embeddingResponseDTO)=>({chunk_id: embeddingResponseDTO.chunkId, embeddings: embeddingResponseDTO.embeddings}));
-        return {statement: 'insert', cacheTable: 'tmp_vectors_insert', rows, SQLFunction: 'insert_into_vectors'};
+        return {statement: 'insert', cacheTable: 'vectors_insert_buffer', rows, SQLFunction: 'insert_into_vectors'};
     }
 }
 

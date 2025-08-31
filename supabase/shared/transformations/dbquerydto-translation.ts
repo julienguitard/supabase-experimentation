@@ -26,15 +26,15 @@ export function edgeFunctionToStatement(edgeFunction:string,step?:string):string
 export function edgeFunctionToTable(edgeFunction:string,step?:string):Option<string>{
     switch (edgeFunction){
         case 'fetch-links':
-            return 'tmp_links_to_scrape';
+            return 'links_to_scrape_extract';
         case 'summarize-links':
-            return 'tmp_contents_to_summarize';
+            return 'contents_to_summarize_extract';
         case 'check-fragments':
-            return 'tmp_fragments_to_check';
+            return 'entities_to_fragment_extract';
         case 'chunk-fragments':
-            return 'tmp_fragments_to_chunk_with_content';
+            return 'fragments_to_chunk_extract';
         case 'vectorize-chunks':
-            return 'tmp_chunks_to_vectorize';
+            return 'chunks_to_vectorize_extract';
         default:
             return null;
     }
@@ -43,25 +43,25 @@ export function edgeFunctionToTable(edgeFunction:string,step?:string):Option<str
 export function edgeFunctionToCacheTable(edgeFunction:string,step?:string):Option<string>{
     switch (edgeFunction){
         case 'insert-links':
-            return 'tmp_links_insert';
+            return 'links_insert_buffer';
         case 'update-links':
-            return 'tmp_links_update';
+            return 'links_update_buffer';
         case 'delete-links':
-            return 'tmp_links_delete';
+            return 'links_delete_buffer';
         case 'fetch-links':
-            return 'tmp_contents_insert';
+            return 'contents_insert_buffer';
         case 'insert-contents':
-            return 'tmp_contents_insert';
+            return 'contents_insert_buffer';
         case 'insert-summaries':
-            return 'tmp_summaries_insert';
+            return 'summaries_insert_buffer';
         case 'check-fragments':
-            return 'tmp_fragments_insert';
+            return 'fragments_insert_buffer';
         case 'chunk-fragments':
-            return 'tmp_chunks_insert';
+            return 'chunks_insert_buffer';
         case 'vectorize-chunks':
-            return 'tmp_vectors_insert';
+            return 'vectors_insert_buffer';
         case 'insert-questions':
-            return 'tmp_questions_insert';
+            return 'questions_insert_buffer';
         default:
             return null;
     }
