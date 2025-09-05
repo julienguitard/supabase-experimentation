@@ -42,3 +42,13 @@ export async function executeInsertInCacheTableQuery(client:Client, cacheTable:s
         throw new Error('Error executing insert in cache table query');
     }
 }
+
+export async function executeFunction(client:Client, functionName:string):Promise<DBResponseDTO<T>>{
+    try {
+        const {data, error} = await client.rpc(functionName);
+        return {data, error};
+    }
+    catch (error) {
+        throw new Error('Error executing function');
+    }
+}

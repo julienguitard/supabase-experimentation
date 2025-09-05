@@ -35,6 +35,8 @@ export function edgeFunctionToTable(edgeFunction:string,step?:string):Option<str
             return 'fragments_to_chunk_extract';
         case 'vectorize-chunks':
             return 'chunks_to_vectorize_extract';
+        case 'answer-questions':
+            return 'questions_to_answer_extract_with_chunks_extract';
         default:
             return null;
     }
@@ -62,6 +64,10 @@ export function edgeFunctionToCacheTable(edgeFunction:string,step?:string):Optio
             return 'vectors_insert_buffer';
         case 'insert-questions':
             return 'questions_insert_buffer';
+        case 'update-questions':
+            return 'questions_update_buffer';
+        case 'delete-questions':
+            return 'questions_delete_buffer';
         default:
             return null;
     }
@@ -79,14 +85,27 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
             return 'insert_into_contents';
         case 'summarize-links':
             return 'insert_into_summaries';
-        case 'check-fragments':
+        case 'check-fragments-':
             return 'insert_into_fragments';
+        case 'check-fragments':
+            return 'insert_into_fragments_from_entities';
         case 'chunk-fragments':
             return 'insert_into_chunks';
         case 'vectorize-chunks':
             return 'insert_into_vectors';
         case 'insert-questions':
             return 'insert_into_questions';
+        case 'update-questions':
+            return 'update_into_questions';
+        case 'delete-questions':
+            return 'delete_into_questions';
+        case 'answer-questions':
+            switch(step){
+                case 'match-question-with-chunks':
+                    return 'insert_into_various_from_questions_to_answer_with_chunks_agg'
+                default:
+                    return null;
+            }
         default:    
             return null;
     }

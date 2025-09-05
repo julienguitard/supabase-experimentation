@@ -1,6 +1,6 @@
 import type { AIClient,  BrowserlessClient, ClientsContext, ScrapableDTO, ScrapedDTO, DBQuery, DBQueryDTO, DBResponseDTO, EmbeddingModel, EmbeddingRequestDTO, EmbeddingResponseDTO, HexCoder, LLMModel, LLMRequestDTO, LLMResponseDTO, RequestDTO, TextCoder, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor } from "../../packages/types/index.ts"
 import { createBrowserlessClient, createHexCoder, createOpenAIClient, createTextCoder, createTokenizer, createTokenEncoder } from "./context-elements.ts";
-import { compileToDBQuery, executeDBQuery, translateRequestDTOToDBQueryDTO,formatToResponseDTO, parseRequest, compileToScrapeQuery, executeScrapeQuery, translateScrapedDTOToDBQueryDTO, formatToScrapableDTO, formatToLLMRequestDTO, compileToLLMModel, executeLLMModel, translateLLMResponseDTOToDBQueryDTO, translateDBResponseDTOToDBQueryDTO, formatToTokenizableDTO, compileToTokenizerExecutor, executeTokenizerExecutor, translateTokenizedDTOToDBQueryDTO, formatToEmbeddingRequestDTO, executeEmbeddingModel, translateEmbeddingResponseDTOToDBQueryDTO, compileToEmbeddingModel } from "./pipeline-elements.ts"
+import { compileToDBQuery, executeDBQuery, translateRequestDTOToDBQueryDTO,formatToResponseDTO, parseRequest, compileToScrapeQuery, executeScrapeQuery, translateScrapedDTOToDBQueryDTO, formatToScrapableDTO, formatToLLMRequestDTO, compileToLLMModel, executeLLMModel, translateLLMResponseDTOToDBQueryDTO, formatToTokenizableDTO, compileToTokenizerExecutor, executeTokenizerExecutor, translateTokenizedDTOToDBQueryDTO, formatToEmbeddingRequestDTO, executeEmbeddingModel, translateEmbeddingResponseDTOToDBQueryDTO, compileToEmbeddingModel } from "./pipeline-elements.ts"
 
 export function createClientsContext(name:string):ClientsContext{
     const textCoder = createTextCoder();
@@ -19,6 +19,12 @@ export function createClientsContext(name:string):ClientsContext{
         return {hexCoder,aiClient:createOpenAIClient()}
     case 'insert-questions':
         return {hexCoder:createHexCoder(createTextCoder())}
+    case 'update-questions':
+        return {hexCoder:createHexCoder(createTextCoder())}
+     case 'delete-questions':
+        return {hexCoder:createHexCoder(createTextCoder())}
+    case 'answer-questions':
+        return {hexCoder:createHexCoder(createTextCoder()),aiClient:createOpenAIClient()}
     default:
         return {};
     }

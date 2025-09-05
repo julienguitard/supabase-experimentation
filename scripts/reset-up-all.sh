@@ -1,0 +1,16 @@
+psql -U postgres -d supabase -f supabase/seed.sql
+psql -U postgres -d supabase -f supabase/migrations/backups/create-backups.sql
+psql -U postgres -d supabase -f supabase/migrations/cleanups/drop-remaining-views-functions.sql
+psql -U postgres -d supabase -f supabase/migrations/schemas/create-schemas.sql
+psql -U postgres -d supabase -f supabase/migrations/restores/create-restores.sql
+psql -U postgres -d supabase -f supabase/migrations/policies/create-policies.sql
+psql -U postgres -d supabase -f supabase/migrations/performance/create-indexes.sql
+psql -U postgres -d supabase -f supabase/migrations/views/create-denormalized-views.sql
+psql -U postgres -d supabase -f supabase/migrations/views/create-chunks-arrays-views.sql
+psql -U postgres -d supabase -f supabase/migrations/views/create-latest-views.sql
+psql -U postgres -d supabase -f supabase/migrations/views/create-neighbours.sql
+psql -U postgres -d supabase -f supabase/migrations/views/create-things-to-do.sql
+psql -U postgres -d supabase -f supabase/migrations/buffers/create-table-buffers.sql
+psql -U postgres -d supabase -f supabase/migrations/buffers/create-view-buffers.sql
+psql -U postgres -d supabase -f supabase/migrations/procedures/create-functions.sql
+psql -U postgres -d supabase -f supabase/migrations/restores/drop-backups.sql

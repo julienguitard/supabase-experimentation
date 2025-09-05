@@ -54,6 +54,20 @@ create table questions_insert_buffer as (
   where false
 );
 
+drop table if exists questions_update_buffer cascade;
+
+create table questions_update_buffer as (
+  select id, created_at, '0afe' as hex_question, user_id from questions
+  where false
+);
+
+drop table if exists questions_delete_buffer cascade;
+
+create table questions_delete_buffer as (
+  select id, created_at, '0afe' as hex_question, user_id from questions
+  where false
+);
+
 -- fragments
 
 drop table if exists fragments_insert_buffer cascade;

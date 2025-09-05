@@ -37,23 +37,43 @@ with
 
 drop view if exists contents_to_summarize cascade;
 
-create view contents_to_summarize with (security_invoker = on) as
-(select id,
-        created_at,
-        status,
-        encode(content,'hex') as hex_content,
-        encode(error,'hex') as hex_error,
-        user_id
-        from (select c.id,
-                c.created_at,
-                c.status,
-                c.content,
-                c.error,
-                c.user_id,
-                case when s.id is null then true else false end as is_to_summarize
-                from contents c
-                left join latest_links_summaries s on s.content_id = c.id)
-        where is_to_summarize);
+create view contents_to_summarize
+with
+  (security_invoker = on) as (
+    select
+      id,
+      created_at,
+      status,
+      encode(content, 'hex') as hex_content,
+      encode(error, 'hex') as hex_error,
+      user_id
+    from
+      (
+        select
+          c.id,
+          c.created_at,
+          c.status,
+          c.content,
+          c.error,
+          c.user_id,
+          case
+            when s.id is null then true
+            else false
+          end as is_to_summarize
+        from
+          (
+            select
+              *
+            from
+              contents
+            where
+              status = '200'
+          ) c
+          left join latest_links_summaries s on s.content_id = c.id
+      )
+    where
+      is_to_summarize
+  );
 
 drop view if exists contents_to_summarize_extract;
 
@@ -99,6 +119,69 @@ with
       *
     from
       questions_to_answer
+    order by
+      random()
+    limit
+      3
+  );
+
+drop view if exists questions_to_answer_with_chunks cascade;
+
+create view questions_to_answer_with_chunks
+with
+  (security_invoker = on) as (
+    select
+      qa.id,
+      qc.chunk_id,
+      qc.chunk,
+      qa.user_id
+    from
+      questions_to_answer qa
+      left join 
+          questions_neighbours_chunks qc
+       using (id)
+  );
+
+drop view if exists questions_to_answer_with_chunks_extract;
+
+create view questions_to_answer_extract_with_chunks_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      questions_to_answer_with_chunks
+    order by
+      random()
+    limit
+      3
+  );
+
+drop view if exists questions_to_answer_with_chunks_agg cascade;
+
+create view questions_to_answer_with_chunks_agg
+with
+  (security_invoker = on) as (
+    select
+      id,
+      array_agg(chunk) as chunks,
+      user_id
+    from
+      questions_to_answer_with_chunks
+    group by
+      id,
+      user_id
+  );
+
+drop view if exists questions_to_answer_with_chunks_agg_extract;
+
+create view questions_to_answer_with_chunks_agg_extract
+with
+  (security_invoker = on) as (
+    select
+      *
+    from
+      questions_to_answer_with_chunks_agg
     order by
       random()
     limit
@@ -249,7 +332,7 @@ with
     order by
       random()
     limit
-      5
+      20
   );
   
 -- Vectors  

@@ -72,14 +72,11 @@ export function getPipelineGenerator(name:string){
                 (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO),
-            ]}
+            ]}       
         case 'check-fragments':
             return (client:unknown)=>{return [
                 async (request:Request)=>await parseRequest(request),
-                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-fragments'),
-                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
-                async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
-                (dbResponseDTO:DBResponseDTO<unknown>)=>translateDBResponseDTOToDBQueryDTO(dbResponseDTO,name,'insert-fragments'),
+                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,name),
                 (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO),
@@ -120,10 +117,26 @@ export function getPipelineGenerator(name:string){
                     async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                     (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
                 ]};
+        case 'update-questions':
+            return (client:unknown,hexCoder:HexCoder)=>{return [
+                async (request:Request)=>await parseRequest(request),
+                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'update-questions','update-questions',hexCoder),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
+                async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
+                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
+            ]};
+        case 'delete-questions':
+            return (client:unknown,hexCoder:HexCoder)=>{return [
+                async (request:Request)=>await parseRequest(request),
+                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,'delete-questions','delete-questions',hexCoder),
+                (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
+                async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
+                (dbResponseDTO:DBResponseDTO<unknown>)=>formatToResponseDTO(dbResponseDTO)
+            ]};
         case 'answer-questions':
             return (client:unknown,hexCoder:HexCoder, aiClient:AIClient)=>{return [
                 async (request:Request)=>await parseRequest(request),
-                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'select-matches'),
+                (requestDTO:RequestDTO)=>translateRequestDTOToDBQueryDTO(requestDTO,name,'match-question-with-chunks'),
                 (dbQueryDTO:DBQueryDTO)=>compileToDBQuery(dbQueryDTO, client),
                 async (dbQuery:DBQuery<any,unknown>)=>await executeDBQuery(dbQuery),
                 (dbResponseDTO:DBResponseDTO<unknown>)=>formatToLLMRequestDTO(hexCoder,dbResponseDTO,name,'modify-questions'),

@@ -16,24 +16,22 @@ export function formatMessageForSummarizingContent(hexCoder:HexCoder,hexContent:
 }
 
 export function formatMessageForModifyingQuestions(hexCoder:HexCoder,hexQuestion:string, hexChunks:string[]):Message<string>[]{
+
     const question = hexCoder.decode(hexQuestion);
     const chunks = hexChunks.map((hexChunk)=>hexCoder.decode(hexChunk)).join('\n');
-    const systemPrompt_ = systemPromptModifyQuestions;
+    const systemPrompt_ = systemPromptModifyQuestions;  
     const userPrompt_ = userPromptModifyQuestions.replace('{question}', question).replace('{chunks}', chunks);
-    const messages = [{role: 'system', content: systemPrompt_}, {role: 'user', content: userPrompt_}];
+    const messages = [{role: 'system', content: systemPrompt_}, {role: 'user', content: userPrompt_}];  
     return messages;
 }
 
-export function formatMessageForAnsweringQuestions(hexCoder:HexCoder,hexQuestion:string, hexModifiedQuestion:string, hexChunks:string[]):Message<string>[]{
-    const question = hexCoder.decode(hexQuestion);
+export function formatMessageForAnsweringQuestions(hexCoder:HexCoder, hexModifiedQuestion:string, hexChunks:string[]):Message<string>[]{
     const modifiedQuestion = hexCoder.decode(hexModifiedQuestion);
     const chunks = hexChunks.map((hexChunk)=>hexCoder.decode(hexChunk)).join('\n');
-    const systemPrompt_ = systemPromptModifyQuestions;
-    const userPrompt_0 = userPromptModifyQuestions.replace('{question}', question).replace('{chunks}', chunks);
+    const systemPrompt_ = systemPromptAnswerQuestions;
     const answer_ = modifiedQuestion
     const userPrompt_1 = userPromptModifyQuestions.replace('{modified_question}', modifiedQuestion).replace('{chunks}', chunks);
-    const messages = [{role: 'system', content: systemPrompt_},
-         {role: 'user', content: userPrompt_0}, {role:'assistant',content:answer_}, {role: 'user', content: userPrompt_1}];
+    const messages = [{role: 'system', content: systemPrompt_}, {role:'assistant',content:answer_}, {role: 'user', content: userPrompt_1}];
     return messages;
 }
 

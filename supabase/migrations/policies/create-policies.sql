@@ -127,6 +127,26 @@ using (
   (select auth.uid() as user_id) is not null
 ) with check ((select auth.uid() as user_id) is not null);
 
+-- Check if the user is authenticated
+create policy "authenticated_all"
+on "public"."questions_update_buffer"
+as permissive
+for all
+to public
+using (
+  (select auth.uid() as user_id) is not null
+) with check ((select auth.uid() as user_id) is not null);
+
+-- Check if the user is authenticated
+create policy "authenticated_all"
+on "public"."questions_delete_buffer"
+as permissive
+for all
+to public
+using (
+  (select auth.uid() as user_id) is not null
+) with check ((select auth.uid() as user_id) is not null);
+
 -- fragments
 
 alter table fragments enable row level security;

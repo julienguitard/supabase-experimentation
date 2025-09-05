@@ -1,7 +1,7 @@
 import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, ScrapableDTO, ScrapedDTO, ContentsRowDTO, TextCoder, HexCoder, Browser, BrowserFactory, ScrapeQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI} from "@types";
 import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleScrapedDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
-import { executeSelectQuery, executeInsertInCacheTableQuery } from "./transformations/dbquery-execution.ts";
+import { executeSelectQuery, executeInsertInCacheTableQuery, executeFunction } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent, formatMessageForModifyingQuestions, formatMessageForAnsweringQuestions } from "./transformations/llmrequestdto-formatting.ts";
 import { AIClient, OpenAI, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO } from "../../packages/types/index.ts";
 import { invoke, vectorize } from "./transformations/llmmodel-compilation.ts";
@@ -80,7 +80,7 @@ export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:
             SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
         }   
         const rows = reqDTO.body;
-        if (edgeFunction === 'insert-questions' && hexCoder) {
+        if ((edgeFunction === 'insert-questions' || edgeFunction === 'update-questions') && hexCoder) {
             const rows_ = rows.map((row)=>({hex_question:hexCoder.encode(row.question)}));
             return {statement, table, rows: rows_, cacheTable, SQLFunction};
         } else if (edgeFunction === 'insert-questions' && !hexCoder) {
@@ -92,29 +92,14 @@ export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:
         else if (table) {
             return {statement,table, rows, cacheTable, SQLFunction};
         }
-        else {
+        else if (rows && cacheTable && SQLFunction) {
             return {statement, rows, cacheTable, SQLFunction};
         }
-    }
-}
-
-export function translateDBResponseDTOToDBQueryDTO(dbResponseDTO:DBResponseDTO<T>, edgeFunction:string, step?:string):DBQueryDTO{
-    switch(edgeFunction){
-        case 'check-fragments': {
-            switch(step){
-                case 'insert-fragments': {
-                    return {statement:'insert', 
-                        cacheTable: 'fragments_insert_buffer',
-                        rows: dbResponseDTO.data.map((row)=>{return row}), 
-                        SQLFunction: 'insert_into_fragments'}
-                }
-                default: {
-                    throw new Error('Wrong step');
-                }
-            }
+        else if ( SQLFunction) {
+            return {statement, SQLFunction};
         }
-        default: {
-            throw new Error('Wrong edge function');
+        else {
+            throw new Error('Wrong DBQueryDTO');
         }
     }
 }
@@ -137,6 +122,9 @@ export function compileToDBQuery(DBqueryDTO:DBQueryDTO,client:Client):DBQuery<Cl
         return {client, 
             query: ()=>executeInsertInCacheTableQuery(client, cacheTable, rows, SQLFunction)
         }
+    }
+    else if (SQLFunction) {
+        return {client, query:()=>executeFunction(client, SQLFunction)};
     }
     else {
         throw new Error('Wrong DBQueryDTO');
@@ -306,13 +294,15 @@ export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponse
             case 'summarize-links': {
                 return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCoder,d.hex_content, d.category), metadata:{contentId: d.id}}));
             }
-            case 'modify-questions': {
+            case 'answer-questions': {
                 switch(step){
                     case 'modify-questions': {
-                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForModifyingQuestions(hexCoder,d.hex_question, d.category), metadata:{match_id: d.id}}));
+                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, 
+                            messages:  formatMessageForModifyingQuestions(hexCoder,d.hex_question, d.hex_chunks), 
+                            metadata:{matchId: d.match_id}}));
                     }
                     case 'answer-questions':{
-                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCoder,d.hex_question, d.hex_modified_question, d.category), metadata:{modified_question_id: d.id}}));
+                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCoder,d.hex_modified_question, d.hex_chunks), metadata:{modifiedQuestionId: d.id}}));
                     }
                     default: {
                         throw new Error('Wrong step');
@@ -364,6 +354,37 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
                 return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction: 'insert_into_summaries'};
             }           
         }
+        case 'answer-questions':
+            switch(step){
+                case 'insert-modified-questions': {
+                    if (isSingleLLMResponseDTO(llmResponseDTO)) {
+                        const {response, metadata} = llmResponseDTO;
+                        if (metadata) {
+                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer',rows:[{match_id: metadata.matchId, hex_modified_question:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                        }
+                        else {
+                            throw new Error('Metadata is required');
+                        }
+                    }   
+                    else {
+                        const rows = llmResponseDTO.map((llmResponseDTO)=>({match_id: llmResponseDTO.metadata.matchId, hex_modified_question:hexCoder.encode(llmResponseDTO.response)}));
+                        return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                    }
+                }
+                case 'insert-answers': {
+                    if (isSingleLLMResponseDTO(llmResponseDTO)) {
+                        const {response, metadata} = llmResponseDTO;
+                        return {statement: 'insert', cacheTable: 'answers_insert_buffer',rows:[{modifed_question_id: metadata.modifiedQuestionId, hex_answer:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_answers'};
+                    }
+                    else {  
+                        const rows = llmResponseDTO.map((llmResponseDTO)=>({modifed_question_id: llmResponseDTO.metadata.modifiedQuestionId, hex_answer:hexCoder.encode(llmResponseDTO.response)}));
+                        return {statement: 'insert', cacheTable: 'answers_insert_buffer', rows, SQLFunction: 'insert_into_answers'};
+                    }
+                }
+                default: {
+                    throw new Error('Wrong step');
+                }
+            }
         default: {
             throw new Error('Wrong edge function');
         }
