@@ -1,5 +1,5 @@
-import type { ContentsRowDTO, Option, SingleScrapedDTO, HexCoder } from "@types";
-import { createTextCoder, createHexCoder } from "../context-elements.ts";
+import type { ContentsRowDTO, Option, SingleScrapedDTO, HexCodec } from "@types";
+import { createTextCodec, createHexCodec } from "../context-elements.ts";
 import { Tokenizer } from "../../../packages/types/index.ts";
 
 export function edgeFunctionToStatement(edgeFunction:string,step?:string):string{
@@ -112,13 +112,13 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
 }
 
 export function translateSingleScrapedDTOToContentsRowDTO(
-  hexCoder: HexCoder,
+  hexCodec: HexCodec,
   scrapedDTO: SingleScrapedDTO
 ): ContentsRowDTO {
   return {
-    link_id: scrapedDTO.linkId,
+    link_id: scrapedDTO,
     status: scrapedDTO.status,
-    hex_content: hexCoder.encode(scrapedDTO.content),
+    hex_content: hexCodec.encode(scrapedDTO.content),
   };
 }
 

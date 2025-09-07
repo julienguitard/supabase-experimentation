@@ -9,11 +9,11 @@ export function isSingleScrapableDTO(scrapableDTO:ScrapableDTO):scrapableDTO is 
 }
 
 export function isSingleScrapedDTO(scrapedDTO:ScrapedDTO): scrapedDTO is SingleScrapedDTO{
-    return 'linkId' in scrapedDTO;
+    return 'status' in scrapedDTO;
 }
 
 export function isSingleTokenizableDTO(tokenizableDTO:TokenizableDTO):tokenizableDTO is SingleTokenizableDTO{
-    return 'fragment_id' in tokenizableDTO;
+    return 'fragment' in tokenizableDTO || 'hex_fragment' in tokenizableDTO;
 }
 
 export function isSingleTokenizableDTOWithHexFragment(tokenizableDTO:TokenizableDTO):tokenizableDTO is SingleTokenizableDTOWithHexFragment{
@@ -41,7 +41,7 @@ export function isListOfTokenizableDTOWithFragment(tokenizableDTO:TokenizableDTO
 }
 
 export function isSingleTokenizedDTO(tokenizedDTO:TokenizedDTO):tokenizedDTO is SingleTokenizedDTO{
-    return 'fragment_id' in tokenizedDTO;
+    return 'start_' in tokenizedDTO;
 }
 
 export function isSingleTokenizedDTOWithHexFragment(tokenizedDTO:TokenizedDTO):tokenizedDTO is SingleTokenizedDTOWithHexFragment{

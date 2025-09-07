@@ -1,12 +1,14 @@
-import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, ScrapableDTO, ScrapedDTO, ContentsRowDTO, TextCoder, HexCoder, Browser, BrowserFactory, ScrapeQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI} from "@types";
-import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment } from "../../packages/types/guards.ts";
+import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, ScrapableDTO, SingleScrapableDTO, ScrapedDTO, ContentsRowDTO, TextCodec, HexCodec, Browser, BrowserFactory, ScrapeQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI} from "@types";
+import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment, isSingleTokenizedDTOWithFragment, isSingleTokenizedDTO } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleScrapedDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery, executeFunction } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent, formatMessageForModifyingQuestions, formatMessageForAnsweringQuestions } from "./transformations/llmrequestdto-formatting.ts";
-import { AIClient, OpenAI, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO } from "../../packages/types/index.ts";
+import { AIClient, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO, SingleTokenizedDTO, SingleTokenizableDTO, SingleTokenizableDTOWithHexFragment } from "../../packages/types/index.ts";
 import { invoke, vectorize } from "./transformations/llmmodel-compilation.ts";
-import { createTokenizer, createTextCoder, createTokenEncoder } from "./context-elements.ts";
-
+import { createTokenizer, createTextCodec, createTokenEncoder } from "./context-elements.ts";
+import { translateSingleScrapableDTO } from "./transformations/scrapedtp-translate.ts";
+import { fetchSingleScrapable } from "./transformations/scrapequery-execution.ts";
+import { executeSingleTokenizableWithHexFragmentDTO } from "./transformations/execute-singletokenizable.ts";
 
 export async function parseRequest(req:Request):RequestDTO{
     const url = new URL(req.url);
@@ -39,7 +41,7 @@ export async function parseRequest(req:Request):RequestDTO{
     return {method, url:url.pathname, urlSearchParams, authHeader, body};
 }
 
-export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string,hexCoder?:HexCoder):DBQueryDTO{
+export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:string, step?:string,hexCodec?:HexCodec):DBQueryDTO{
     const {method, urlSearchParams, authHeader} = reqDTO;
     let statement:string;
     if (step){
@@ -80,11 +82,11 @@ export function translateRequestDTOToDBQueryDTO(reqDTO:RequestDTO, edgeFunction:
             SQLFunction = edgeFunctionToSQLFunction(edgeFunction);
         }   
         const rows = reqDTO.body;
-        if ((edgeFunction === 'insert-questions' || edgeFunction === 'update-questions') && hexCoder) {
-            const rows_ = rows.map((row)=>({hex_question:hexCoder.encode(row.question)}));
+        if ((edgeFunction === 'insert-questions' || edgeFunction === 'update-questions') && hexCodec) {
+            const rows_ = rows.map((row)=>({hex_question:hexCodec.encode(row.question)}));
             return {statement, table, rows: rows_, cacheTable, SQLFunction};
-        } else if (edgeFunction === 'insert-questions' && !hexCoder) {
-            throw new Error('HexCoder is required for insert-questions');
+        } else if (edgeFunction === 'insert-questions' && !hexCodec) {
+            throw new Error('HexCodec is required for insert-questions');
         }
         if (id) {
             throw new Error('Inserting with an id is not allowed');
@@ -143,33 +145,32 @@ export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>
 }
 
 
-export function formatToScrapableDTO(dbResponseDTO:DBResponseDTO<T>):ScrapableDTO{
+export function formatToScrapableDTO(dbResponseDTO:DBResponseDTO<T>):ScrapableDTO&{link_id: string}{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to scrapable DTO');
     }
     else {
-        return data.map((d)=>({method: 'GET', url:d.url, headers:{}, linkId: d.id,}))
+        return data.map((d)=>({method: 'GET', url:d.url, headers:{}, link_id: d.id,}))
     }
 }
+
+
+
 
 export function compileToScrapeQuery(scrapableDTO:ScrapableDTO, browserlessClient?:BrowserlessClient, browser?:Browser):ScrapeQuery{
     if (browserlessClient) {
         let scrapableDTO_:ScrapableDTO;
         let body:Option<string>;
         if (isSingleScrapableDTO(scrapableDTO)) {
-             scrapableDTO_ = {method: 'POST', url:browserlessClient.url,
-                 headers:browserlessClient.headers, linkId: scrapableDTO.linkId,
-                 body:browserlessClient.completeBody(scrapableDTO.url)};
+             scrapableDTO_ = translateSingleScrapableDTO(scrapableDTO,browserlessClient);
         }
         else {
-            scrapableDTO_ = scrapableDTO.map((c)=>({method: 'POST', url:browserlessClient.url, headers: browserlessClient.headers, linkId: c.linkId,body:browserlessClient.completeBody(c.url)}));
+            scrapableDTO_ = scrapableDTO.map((c)=>translateSingleScrapableDTO(c,browserlessClient));
         }
         if (browser) {
-
             return {scrapableDTO: scrapableDTO_, browserlessClient, browser};//TODO: implement browser
         }
-        
         else {
             return {scrapableDTO: scrapableDTO_, browserlessClient};
         }
@@ -182,6 +183,7 @@ export function compileToScrapeQuery(scrapableDTO:ScrapableDTO, browserlessClien
     }
 }
 
+
 export async function executeScrapeQuery(scrapeQuery:ScrapeQuery):Promise<ScrapedDTO>{
     const {scrapableDTO, browserlessClient, browser} = scrapeQuery;
     if (browser) {
@@ -189,64 +191,43 @@ export async function executeScrapeQuery(scrapeQuery:ScrapeQuery):Promise<Scrape
     }
     else {
         if (isSingleScrapableDTO(scrapableDTO)) {
-            const {method, url, headers, linkId, body} = scrapableDTO;
-            let response:Response;
-            if (browserlessClient) {
-                response = await fetch(url, {method, headers, body});
-            }
-            else {
-                response = await fetch(url, {method, headers});
-            }
-            const body_ = await response.text();
-            const status = response.status;
-            const headers_ = response.headers;
-            return {linkId, status, headers:headers_, body:body_};
+            return fetchSingleScrapable(scrapableDTO, browserlessClient)
         }
         else {
             const scrapedDTO: ScrapedDTO = [];
             for (const singleScrapableDTO of scrapableDTO) {
-                let response:Response;
-                if (browserlessClient) {
-                    response = await fetch(singleScrapableDTO.url, {method: singleScrapableDTO.method, headers: singleScrapableDTO.headers, body: singleScrapableDTO.body});
-                }
-                else {
-                    response = await fetch(singleScrapableDTO.url, {method: singleScrapableDTO.method, headers: singleScrapableDTO.headers});
-                }
-                const body_ = await response.text();
-                const status = response.status;
-                const headers_ = response.headers;
-                let error:Option<string>;
-                if (response.statusText) {
-                    error = response.statusText;
-                }
-                else {
-                    error = null;
-                }
-                scrapedDTO.push({linkId: singleScrapableDTO.linkId, status, headers:headers_, body:body_.slice(0,1000), error});//TO DO remove slice
+                const single = await fetchSingleScrapable(singleScrapableDTO, browserlessClient)
+                scrapedDTO.push({
+                    link_id: singleScrapableDTO.link_id,
+                    status: single.status,
+                    headers: single.headers,
+                    body: single.body.slice(0,1000), // TO DO remove slice
+                    error: single.error
+                })
             }
             return scrapedDTO;
         }
     }
 }
 
-export function translateScrapedDTOToDBQueryDTO(hexCoder:HexCoder,scrapedDTO:ScrapedDTO):DBQueryDTO{
+export function translateScrapedDTOToDBQueryDTO(hexCodec:HexCodec,scrapedDTO:ScrapedDTO):DBQueryDTO<{link_id: string}>{
     if (isSingleScrapedDTO(scrapedDTO)) {
-        const {linkId, status, headers, body, error} = scrapedDTO;
+        const {status, headers, body, error, link_id} = scrapedDTO;
         if (error) {
-            return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body), hex_error:hexCoder.encode(error)}], SQLFunction: 'insert_into_contents'};
+            return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows: [{link_id: link_id, status,hex_content:hexCodec.encode(body), hex_error:hexCodec.encode(error)}], SQLFunction: 'insert_into_contents'};
         }
         else {
-            return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows: [{link_id: linkId, status,hex_content:hexCoder.encode(body),hex_error:null}], SQLFunction: 'insert_into_contents'};
+            return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows: [{link_id: link_id, status,hex_content:hexCodec.encode(body),hex_error:null}], SQLFunction: 'insert_into_contents'};
         }
     }
     else {
-        const rows = scrapedDTO.map((scrapedDTO)=>({link_id: scrapedDTO.linkId, status: scrapedDTO.status, hex_content:hexCoder.encode(scrapedDTO.body), hex_error:(scrapedDTO.error)?hexCoder.encode(scrapedDTO.error):null}));
+        const rows = scrapedDTO.map((scrapedDTO)=>({link_id: scrapedDTO.link_id, status: scrapedDTO.status, hex_content:hexCodec.encode(scrapedDTO.body), hex_error:(scrapedDTO.error)?hexCodec.encode(scrapedDTO.error):null}));
         return {statement: 'insert', cacheTable: 'contents_insert_buffer', rows, SQLFunction: 'insert_into_contents'};
     }
     
 }
 
-export function formatToTokenizableDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):TokenizableDTO{
+export function formatToTokenizableDTO(hexCodec:HexCodec,dbResponseDTO:DBResponseDTO<{fragment_id: string}>):TokenizableDTO{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to tokenizable DTO');
@@ -260,23 +241,34 @@ export function compileToTokenizerExecutor(tokenizer:Tokenizer,tokenizableDTO:To
     return {tokenizer, tokenizableDTO};
 }
 
+
 export function executeTokenizerExecutor(tokenizerExecutor:TokenizerExecutor):Option<TokenizedDTO>{
     const {tokenizer, tokenizableDTO} = tokenizerExecutor;
     if (isSingleTokenizableDTOWithHexFragment(tokenizableDTO)) {
-        return tokenizer.chunkHexContent(tokenizableDTO.hex_fragment,{fragment_id: tokenizableDTO.fragment_id});
+        return  executeSingleTokenizableWithHexFragmentDTO(tokenizer,tokenizableDTO);
     }
     else if (isListOfTokenizableDTOWithHexFragment(tokenizableDTO)) {
-        return tokenizableDTO.flatMap((t)=>tokenizer.chunkHexContent(t.hex_fragment,{fragment_id: t.fragment_id}));
+        return tokenizableDTO.flatMap((t)=>executeSingleTokenizableWithHexFragmentDTO(tokenizer,t));
     }
     else {
         return null;
     }
 }
 
-export function translateTokenizedDTOToDBQueryDTO(hexCoder:HexCoder,tokenizedDTO:TokenizedDTO):DBQueryDTO{
-    if (isSingleTokenizedDTOWithHexFragment(tokenizedDTO)) {
-        const {fragment_id, hex_chunk, start_, end_, length_} = tokenizedDTO;
-        return {statement: 'insert', cacheTable: 'chunks_insert_buffer', rows: [{fragment_id, hex_chunk, start_, end_, length_}], SQLFunction: 'insert_into_chunks'};
+export function translateTokenizedDTOToDBQueryDTO(hexCodec:HexCodec,tokenizedDTO:TokenizedDTO):DBQueryDTO<{fragment_id: string}>{
+    if (isSingleTokenizedDTO(tokenizedDTO)) {
+        if (isSingleTokenizedDTOWithHexFragment(tokenizedDTO)) {
+            const {hex_chunk, start_, end_, length_ ,...payload} = tokenizedDTO;
+            if ('fragment_id' in payload) {
+                return {statement: 'insert', cacheTable: 'chunks_insert_buffer', rows: [{fragment_id: payload.fragment_id, hex_chunk, start_, end_, length_}], SQLFunction: 'insert_into_chunks'};
+            }
+            else {
+                throw new Error('Payload is required');
+            }
+        }
+        else if (isSingleTokenizedDTOWithFragment(tokenizedDTO)) {
+            throw new Error('TokenizedDTO with fragment is not supported');
+        }
     }
     else {
         const rows = tokenizedDTO.map((t)=>({fragment_id: t.fragment_id, hex_chunk: t.hex_chunk, start_: t.start_, end_: t.end_, length_: t.length_}));
@@ -284,7 +276,8 @@ export function translateTokenizedDTOToDBQueryDTO(hexCoder:HexCoder,tokenizedDTO
     }
 }
 
-export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>, egdeFunction:string, step:string):Promise<LLMRequestDTO>{
+
+export function formatToLLMRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBResponseDTO<T>, egdeFunction:string, step:string):Promise<LLMRequestDTO>{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to LLM request DTO');
@@ -292,17 +285,17 @@ export function formatToLLMRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponse
     else {
         switch(egdeFunction){
             case 'summarize-links': {
-                return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCoder,d.hex_content, d.category), metadata:{contentId: d.id}}));
+                return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCodec,d.hex_content, d.category), metadata:{contentId: d.id}}));
             }
             case 'answer-questions': {
                 switch(step){
                     case 'modify-questions': {
                         return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, 
-                            messages:  formatMessageForModifyingQuestions(hexCoder,d.hex_question, d.hex_chunks), 
+                            messages:  formatMessageForModifyingQuestions(hexCodec,d.hex_question, d.hex_chunks), 
                             metadata:{matchId: d.match_id}}));
                     }
                     case 'answer-questions':{
-                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCoder,d.hex_modified_question, d.hex_chunks), metadata:{modifiedQuestionId: d.id}}));
+                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCodec,d.hex_modified_question, d.hex_chunks), metadata:{modifiedQuestionId: d.id}}));
                     }
                     default: {
                         throw new Error('Wrong step');
@@ -336,13 +329,13 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
     }
 }
 
-export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDTO,hexCoder:HexCoder,edgeFunction:string,step:string):DBQueryDTO{
+export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDTO,hexCodec:HexCodec,edgeFunction:string,step:string):DBQueryDTO{
     switch(edgeFunction){
         case 'summarize-links': {
             if (isSingleLLMResponseDTO(llmResponseDTO)) {
                 const {response, metadata} = llmResponseDTO;
                 if (metadata) {
-                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows: [{content_id: metadata.contentId, hex_summary:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
+                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows: [{content_id: metadata.contentId, hex_summary:hexCodec.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_summaries', metadata};
                 }
                 else {
                     throw new Error('Metadata is required');
@@ -350,7 +343,7 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
             }
             else {
                 const rows = llmResponseDTO.map((llmResponseDTO)=>({content_id: llmResponseDTO.metadata.contentId,
-                     hex_summary:hexCoder.encode(llmResponseDTO.response)}));
+                     hex_summary:hexCodec.encode(llmResponseDTO.response)}));
                 return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction: 'insert_into_summaries'};
             }           
         }
@@ -360,24 +353,24 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
                     if (isSingleLLMResponseDTO(llmResponseDTO)) {
                         const {response, metadata} = llmResponseDTO;
                         if (metadata) {
-                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer',rows:[{match_id: metadata.matchId, hex_modified_question:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer',rows:[{match_id: metadata.matchId, hex_modified_question:hexCodec.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
                         }
                         else {
                             throw new Error('Metadata is required');
                         }
                     }   
                     else {
-                        const rows = llmResponseDTO.map((llmResponseDTO)=>({match_id: llmResponseDTO.metadata.matchId, hex_modified_question:hexCoder.encode(llmResponseDTO.response)}));
+                        const rows = llmResponseDTO.map((llmResponseDTO)=>({match_id: llmResponseDTO.metadata.matchId, hex_modified_question:hexCodec.encode(llmResponseDTO.response)}));
                         return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
                     }
                 }
                 case 'insert-answers': {
                     if (isSingleLLMResponseDTO(llmResponseDTO)) {
                         const {response, metadata} = llmResponseDTO;
-                        return {statement: 'insert', cacheTable: 'answers_insert_buffer',rows:[{modifed_question_id: metadata.modifiedQuestionId, hex_answer:hexCoder.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_answers'};
+                        return {statement: 'insert', cacheTable: 'answers_insert_buffer',rows:[{modifed_question_id: metadata.modifiedQuestionId, hex_answer:hexCodec.encode(response.choices[0]?.message?.content || "")}], SQLFunction: 'insert_into_answers'};
                     }
                     else {  
-                        const rows = llmResponseDTO.map((llmResponseDTO)=>({modifed_question_id: llmResponseDTO.metadata.modifiedQuestionId, hex_answer:hexCoder.encode(llmResponseDTO.response)}));
+                        const rows = llmResponseDTO.map((llmResponseDTO)=>({modifed_question_id: llmResponseDTO.metadata.modifiedQuestionId, hex_answer:hexCodec.encode(llmResponseDTO.response)}));
                         return {statement: 'insert', cacheTable: 'answers_insert_buffer', rows, SQLFunction: 'insert_into_answers'};
                     }
                 }
@@ -391,14 +384,14 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
     }
 }
 
-export function formatToEmbeddingRequestDTO(hexCoder:HexCoder,dbResponseDTO:DBResponseDTO<T>):EmbeddingRequestDTO{
+export function formatToEmbeddingRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBResponseDTO<T>):EmbeddingRequestDTO{
     const {data, error} = dbResponseDTO;
     if (error) {
         throw new Error('Error formatting to embedding request DTO');
     }
     else {
         console.log('Formatting to embedding request DTO!',data);
-        return data.map((d)=>({model: 'text-embedding-3-small', input: hexCoder.decode(d.chunk), chunkId: d.id }));
+        return data.map((d)=>({model: 'text-embedding-3-small', input: hexCodec.decode(d.chunk), chunkId: d.id }));
     }
 }   
 
@@ -422,7 +415,7 @@ export async function executeEmbeddingModel(embeddingModel:EmbeddingModel):Promi
     }
 }
 
-export function translateEmbeddingResponseDTOToDBQueryDTO(hexCoder:HexCoder,embeddingResponseDTO:EmbeddingResponseDTO):DBQueryDTO{
+export function translateEmbeddingResponseDTOToDBQueryDTO(hexCodec:HexCodec,embeddingResponseDTO:EmbeddingResponseDTO):DBQueryDTO{
     if (isSingleEmbeddingResponseDTO(embeddingResponseDTO)) {
         const {embeddings, chunkId} = embeddingResponseDTO;
         return {statement: 'insert', cacheTable: 'vectors_insert_buffer', rows: [{chunk_id: chunkId, embeddings: embeddings}], SQLFunction: 'insert_into_vectors'};

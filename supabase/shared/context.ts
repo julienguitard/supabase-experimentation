@@ -1,30 +1,30 @@
-import type { AIClient,  BrowserlessClient, ClientsContext, ScrapableDTO, ScrapedDTO, DBQuery, DBQueryDTO, DBResponseDTO, EmbeddingModel, EmbeddingRequestDTO, EmbeddingResponseDTO, HexCoder, LLMModel, LLMRequestDTO, LLMResponseDTO, RequestDTO, TextCoder, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor } from "../../packages/types/index.ts"
-import { createBrowserlessClient, createHexCoder, createOpenAIClient, createTextCoder, createTokenizer, createTokenEncoder } from "./context-elements.ts";
+import type { AIClient,  BrowserlessClient, ClientsContext, ScrapableDTO, ScrapedDTO, DBQuery, DBQueryDTO, DBResponseDTO, EmbeddingModel, EmbeddingRequestDTO, EmbeddingResponseDTO, HexCodec, LLMModel, LLMRequestDTO, LLMResponseDTO, RequestDTO, TextCodec, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor } from "../../packages/types/index.ts"
+import { createBrowserlessClient, createHexCodec, createOpenAIClient, createTextCodec, createTokenizer, createTokenEncoder } from "./context-elements.ts";
 import { compileToDBQuery, executeDBQuery, translateRequestDTOToDBQueryDTO,formatToResponseDTO, parseRequest, compileToScrapeQuery, executeScrapeQuery, translateScrapedDTOToDBQueryDTO, formatToScrapableDTO, formatToLLMRequestDTO, compileToLLMModel, executeLLMModel, translateLLMResponseDTOToDBQueryDTO, formatToTokenizableDTO, compileToTokenizerExecutor, executeTokenizerExecutor, translateTokenizedDTOToDBQueryDTO, formatToEmbeddingRequestDTO, executeEmbeddingModel, translateEmbeddingResponseDTOToDBQueryDTO, compileToEmbeddingModel } from "./pipeline-elements.ts"
 
 export function createClientsContext(name:string):ClientsContext{
-    const textCoder = createTextCoder();
-    const hexCoder = createHexCoder(textCoder);
+    const textCodec = createTextCodec();
+    const hexCodec = createHexCodec(textCodec);
     const openaiClient = createOpenAIClient();
 
     switch (name){
     case 'fetch-links':
-        return {browserlessClient:createBrowserlessClient(),hexCoder:createHexCoder(createTextCoder())}
+        return {browserlessClient:createBrowserlessClient(),hexCodec:createHexCodec(createTextCodec())}
     case 'summarize-links':
-        return {hexCoder:createHexCoder(createTextCoder()),aiClient:createOpenAIClient()}
+        return {hexCodec:createHexCodec(createTextCodec()),aiClient:createOpenAIClient()}
     case 'chunk-fragments':
-        const tokenizer = createTokenizer(createTokenEncoder(),textCoder,hexCoder);
-        return {hexCoder,tokenizer}
+        const tokenizer = createTokenizer(createTokenEncoder(),textCodec,hexCodec);
+        return {hexCodec,tokenizer}
     case 'vectorize-chunks':
-        return {hexCoder,aiClient:createOpenAIClient()}
+        return {hexCodec,aiClient:createOpenAIClient()}
     case 'insert-questions':
-        return {hexCoder:createHexCoder(createTextCoder())}
+        return {hexCodec:createHexCodec(createTextCodec())}
     case 'update-questions':
-        return {hexCoder:createHexCoder(createTextCoder())}
+        return {hexCodec:createHexCodec(createTextCodec())}
      case 'delete-questions':
-        return {hexCoder:createHexCoder(createTextCoder())}
+        return {hexCodec:createHexCodec(createTextCodec())}
     case 'answer-questions':
-        return {hexCoder:createHexCoder(createTextCoder()),aiClient:createOpenAIClient()}
+        return {hexCodec:createHexCodec(createTextCodec()),aiClient:createOpenAIClient()}
     default:
         return {};
     }

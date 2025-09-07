@@ -17,16 +17,16 @@ export async function handlePipeline(ctx:ClientsContext, pipeline:Pipeline, req:
         let steps:ReturnType<typeof pipeline>;
         if (ctx.browserlessClient) {
             console.log(`[${Date.now()}] Using browserless pipeline`);
-            steps = pipeline(supabaseClient, ctx.browserlessClient, ctx.hexCoder);
+            steps = pipeline(supabaseClient, ctx.browserlessClient, ctx.hexCodec);
         } else if (ctx.tokenizer) {
             console.log(`[${Date.now()}] Using tokenizer pipeline`);
-            steps = pipeline(supabaseClient, ctx.hexCoder, ctx.tokenizer);
+            steps = pipeline(supabaseClient, ctx.hexCodec, ctx.tokenizer);
         } else if (ctx.aiClient) {
             console.log(`[${Date.now()}] Using AI client pipeline`);
-            steps = pipeline(supabaseClient, ctx.hexCoder, ctx.aiClient);
-        } else if (ctx.hexCoder) {
-            console.log(`[${Date.now()}] Using hexCoder pipeline`);
-            steps = pipeline(supabaseClient, ctx.hexCoder);
+            steps = pipeline(supabaseClient, ctx.hexCodec, ctx.aiClient);
+        } else if (ctx.hexCodec) {
+            console.log(`[${Date.now()}] Using hexCodec pipeline`);
+            steps = pipeline(supabaseClient, ctx.hexCodec);
         } else {
             console.log(`[${Date.now()}] Using basic pipeline`);
             steps = pipeline(supabaseClient);

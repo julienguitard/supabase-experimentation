@@ -17,7 +17,7 @@ export async function executeSelectQuery(client:Client, table:string, id?:string
     }
 }
 
-export async function executeInsertInCacheTableQuery(client:Client, cacheTable:string, rows:T, sqlFunction:string):Promise<DBResponseDTO<T>>{
+export async function executeInsertInCacheTableQuery(client:Client, cacheTable:string, rows:T[], sqlFunction:string):Promise<DBResponseDTO<T>>{
     try {
         const {data : insertData, error : insertError} = await client.from(cacheTable).insert(rows);
         if (insertError) {

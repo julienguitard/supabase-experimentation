@@ -1,4 +1,4 @@
-import type { Option, Env, BrowserlessClient, User, TextCoder, Browser, BrowserFactory, HexCoder, Tokenizer } from "@types";
+import type { Option, Env, BrowserlessClient, User, TextCodec, Browser, BrowserFactory, HexCodec, Tokenizer } from "@types";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import tiktoken from 'npm:tiktoken';
@@ -77,16 +77,16 @@ export function createBrowserFactory(ctx:Env=Deno.env):BrowserFactory{
 }
 
 
-export function createTextCoder():TextCoder{
+export function createTextCodec():TextCodec{
     const textEncoder: TextEncoder = new TextEncoder();
     const textDecoder: TextDecoder = new TextDecoder();
     return {textEncoder, textDecoder};
 }
 
-export function createHexCoder(textCoder:TextCoder):HexCoder{
-    const hexCoder: HexCoder = {
+export function createHexCodec(textCodec:TextCodec):HexCodec{
+    const hexCodec: HexCodec = {
         encode: (input: string) => {
-            return Array.from(textCoder.textEncoder.encode(input)).map(b => b.toString(16).padStart(2, '0')).join('');
+            return Array.from(textCodec.textEncoder.encode(input)).map(b => b.toString(16).padStart(2, '0')).join('');
         },
         decode: (hexString: string) => {
             // Convert hex string back to bytes
@@ -95,20 +95,20 @@ export function createHexCoder(textCoder:TextCoder):HexCoder{
             return new TextDecoder().decode(bytes);
         }
     }
-    return hexCoder;
+    return hexCodec;
 }
 
 export function createTokenEncoder(model:string='gpt-4o'):ReturnType<typeof tiktoken.encoding_for_model>{
     return tiktoken.encoding_for_model(model);
 }
 
-export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding_for_model>,textCoder:TextCoder, hexCoder:HexCoder):Tokenizer{
+export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding_for_model>,textCodec:TextCodec, hexCodec:HexCodec):Tokenizer{
     
     const encode: (input: string) => number[] = (input: string) => {
       return tokenEncoder.encode(input);
     };
     const decode: (tokens: number[]) => string = (tokens: number[]) => {
-      return textCoder.textDecoder.decode(tokenEncoder.decode(tokens));
+      return textCodec.textDecoder.decode(tokenEncoder.decode(tokens));
     };
     const listSlice:(input:number[])=>{start:number,end:number}[] = (input:number[])=>{
       const length:number = input.length;
@@ -126,11 +126,11 @@ export function createTokenizer(tokenEncoder:ReturnType<typeof tiktoken.encoding
       const tokens = tokenEncoder.encode(input);
       const slicesList = listSlice(tokens);
       const sliced = applyListSlice(tokens,slicesList);
-      return sliced.map(s=>{return {chunk:textCoder.textDecoder.decode(tokenEncoder.decode(s.chunk_)),start_:s.start_,end_:s.end_, length_:s.length_}});
+      return sliced.map(s=>{return {chunk:textCodec.textDecoder.decode(tokenEncoder.decode(s.chunk_)),start_:s.start_,end_:s.end_, length_:s.length_}});
     }
 
-    const chunkHexContent: (input:string,x?:Record<string,any>)=>Record<string,any>&{chunk:string,start_:number,end_:number}[] = (input:string,x?:Record<string,any>)=>{
-      return chunkContent(hexCoder.decode(input)).map(c=>{return {...x,hex_chunk:hexCoder.encode(c.chunk),start_:c.start_,end_:c.end_, length_:c.length_}});
+    const chunkHexContent: (input:string,x?:Record<string,any>)=>Record<string,any>&{hex_chunk:string,start_:number,end_:number}[] = (input:string,x?:Record<string,any>)=>{
+      return chunkContent(hexCodec.decode(input)).map(c=>{return {...x,hex_chunk:hexCodec.encode(c.chunk),start_:c.start_,end_:c.end_, length_:c.length_}});
     }
 
     return {encode,decode,listSlice,applyListSlice,chunkContent,chunkHexContent};

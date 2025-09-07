@@ -2,22 +2,43 @@
 
 drop view if exists links_to_scrape cascade;
 
-create view links_to_scrape with (security_invoker = on) as
-(select id,
-        created_at,
-        url,
-        category,
-        user_id
-        from (select l.id,
-                        l.created_at,
-                        l.url,
-                        l.category,
-                        l.user_id,
-                        CASE WHEN c.id is null THEN TRUE ELSE FALSE END as is_to_scrape
-                    from links l
-                    left join latest_links_contents c on c.link_id = l.id)
-        where is_to_scrape
-);
+
+create view links_to_scrape
+with
+  (security_invoker = on) as (
+    select
+      id,
+      created_at,
+      url,
+      category,
+      user_id
+    from
+      (
+        select
+          l.id,
+          l.created_at,
+          l.url,
+          l.category,
+          l.user_id,
+          case
+            when c.id is null then true
+            else false
+          end as is_to_scrape
+        from
+          links l
+          left join (
+            select
+              *
+            from
+              denormalized_contents
+            where
+              status = '200'
+          ) c on c.link_id = l.id
+      )
+    where
+      is_to_scrape
+  );
+
 drop view if exists links_to_scrape_extract;
 
 create view links_to_scrape_extract
@@ -30,7 +51,7 @@ with
     order by
       random()
     limit
-      3
+      5
   );
 
 -- Contents
@@ -69,7 +90,7 @@ with
             where
               status = '200'
           ) c
-          left join latest_links_summaries s on s.content_id = c.id
+          left join denormalized_summaries s on s.content_id = c.id
       )
     where
       is_to_summarize
@@ -107,7 +128,7 @@ create view questions_to_answer with (security_invoker = on) as
                 q.user_id,
                 case when a.id is null then true else false end as is_to_answer
                 from questions q
-                left join latest_questions_answers a on a.question_id = q.id)
+                left join denormalized_answers a on a.question_id = q.id)
         where is_to_answer);
 
 drop view if exists questions_to_answer_extract;
@@ -205,7 +226,7 @@ create view contents_to_fragment with (security_invoker = on) as
                 c.user_id,
                 case when f.id is null then true else false end as is_to_fragment
                 from contents c
-                left join latest_links_fragments f on f.content_id = c.id)
+                left join denormalized_contents_fragments f on f.content_id = c.id)
         where is_to_fragment);
 
 drop view if exists summaries_to_fragment cascade;
@@ -220,7 +241,7 @@ create view summaries_to_fragment with (security_invoker = on) as
                 s.user_id,
                 case when f.id is null then true else false end as is_to_fragment
                 from summaries s
-                left join latest_summaries_fragments f on f.summary_id = s.id)
+                left join denormalized_summaries_fragments f on f.summary_id = s.id)
         where is_to_fragment);
 
 drop view if exists questions_to_fragment cascade;
@@ -235,7 +256,7 @@ create view questions_to_fragment with (security_invoker = on) as
                 q.user_id,
                 case when f.id is null then true else false end as is_to_fragment
                 from questions q
-                left join latest_questions_fragments f on f.question_id = q.id)
+                left join denormalized_questions_fragments f on f.question_id = q.id)
         where is_to_fragment);
 
 drop view if exists entities_to_fragment cascade;
@@ -284,7 +305,7 @@ drop view if exists fragments_to_chunk cascade;
                 f.user_id,
                 case when c.id is null then true else false end as is_to_chunk
                 from denormalized_entities_fragments f
-                left join latest_fragments_chunks c on c.fragment_id = f.id)
+                left join denormalized_chunks c on c.fragment_id = f.id)
         where is_to_chunk);
 
 drop view if exists fragments_to_chunk_extract;
@@ -317,7 +338,7 @@ create view chunks_to_vectorize with (security_invoker = on) as
                 c.user_id,
                 case when v.id is null then true else false end as is_to_vectorize
                 from chunks c
-                left join latest_fragments_vectors v on v.chunk_id = c.id)
+                left join denormalized_vectors v on v.chunk_id = c.id)
         where is_to_vectorize);
 
 drop view if exists chunks_to_vectorize_extract;

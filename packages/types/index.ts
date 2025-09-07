@@ -26,12 +26,12 @@ export type BrowserFactory = {
     browser: () => Promise<Browser>;
 }
 
-export type TextCoder = {
+export type TextCodec = {
     textEncoder: TextEncoder;
     textDecoder: TextDecoder;
 }
 
-export type HexCoder = {
+export type HexCodec = {
     encode: (input: string) => string;
     decode: (hexString: string) => string;
 }
@@ -48,7 +48,7 @@ export type Tokenizer = {
 
 export type ClientsContext = {
     browserlessClient?: BrowserlessClient;
-    hexCoder?: HexCoder;
+    hexCodec?: HexCodec;
     tokenizer?: Tokenizer;
     aiClient?: AIClient;
 }
@@ -69,15 +69,11 @@ export type RequestDTO = {
     body?: ReturnType<Request["json"]>;
 }
 
-export type SingleScrapableDTO = RequestDTO & {
-    linkId: string;
-}
+export type SingleScrapableDTO = RequestDTO
 
 export type ScrapableDTO = OneOrMany<SingleScrapableDTO>;
 
-export type SingleScrapedDTO = ResponseDTO & {
-    linkId: string;
-}
+export type SingleScrapedDTO = ResponseDTO
 
 export type ScrapeQuery = {
     scrapableDTO: ScrapableDTO;
@@ -88,12 +84,10 @@ export type ScrapeQuery = {
 export type ScrapedDTO = OneOrMany<SingleScrapedDTO>;
 
 export type SingleTokenizableDTOWithFragment = {
-    fragment_id: string,
     fragment:string
 }
 
 export type SingleTokenizableDTOWithHexFragment = {
-    fragment_id: string,
     hex_fragment:string
 }
 
@@ -106,21 +100,22 @@ export type TokenizerExecutor = {
     tokenizableDTO: TokenizableDTO;
 }
 
+//Never used in practice because the tokenizer always returns a list
 export type SingleTokenizedDTOWithFragment = {
-    fragment_id: string,
     chunk:string,
     start_:number,
     end_:number,
     length_:number
 }
+//Never used in practice because the tokenizer always returns a list
 
 export type SingleTokenizedDTOWithHexFragment = {
-    fragment_id: string;
     hex_chunk:string,
     start_:number,
     end_:number,
     length_:number
 }
+//Never used in practice because the tokenizer always returns a list
 
 export type SingleTokenizedDTO = SingleTokenizedDTOWithFragment | SingleTokenizedDTOWithHexFragment;
 
@@ -194,7 +189,7 @@ export type DBQuery<Client,T> = {
 }
 
 export type DBResponseDTO<T> = {
-    data?: T;
+    data?: T[];
     error?: PostgresError;
 }
 
@@ -204,3 +199,10 @@ export type ResponseDTO = {
     body: string;
     error?: string;
 }
+
+//Utilities payload types
+
+export type Link = {link_id:string}
+
+export type Fragment = {fragment_id:string};
+
