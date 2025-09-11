@@ -126,49 +126,46 @@ export type Message<T> = {
     content: T;
 }
 
-export type SingleLLMRequestDTO<M extends Record<string,string>> = {
+export type SingleLLMRequestDTO = {
     model: string;
     maxToken: number;
     temperature?: number;
     messages: Message<string>[];
-    metadata?:M;
 }
 
-export type LLMRequestDTO<M extends Record<string,string>> = OneOrMany<SingleLLMRequestDTO<M>>;
+export type LLMRequestDTO<M extends Record<string,string>> = OneOrMany<SingleLLMRequestDTO>;
 
 export type AIClient = OpenAI | Anthropic | DeepSeek;
 
 export type LLMModel<M extends Record<string,string>> = {
     client: AIClient;
     LLMRequestDTO:LLMRequestDTO<M>;
-    invoke: (singleLLMRequestDTO:SingleLLMRequestDTO<M>)=>Promise<string>;
+    invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
 }
 
-export type SingleLLMResponseDTO<M extends Record<string,string>> = {
+export type SingleLLMResponseDTO = {
     response: string;
     response_type?: string;
-    metadata?: M;
 }
 
-export type LLMResponseDTO<M extends Record<string,string>> = OneOrMany<SingleLLMResponseDTO<M>>;
+export type LLMResponseDTO = OneOrMany<SingleLLMResponseDTO>;
 
 export type SingleEmbeddingRequestDTO = {
     model: string;
     input: string;
-    chunkId: string;
+    chunk_id: string;
 };
 
 export type EmbeddingRequestDTO = OneOrMany<SingleEmbeddingRequestDTO>;
 
 export type EmbeddingModel = {
     client: AIClient;
-    EmbeddingRequestDTO:EmbeddingRequestDTO;
+    embeddingRequestDTO:EmbeddingRequestDTO;
     vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>Promise<number[]>;
 }
 
 export type SingleEmbeddingResponseDTO = {
     embeddings: number[];
-    chunkId: string;
 };
 
 export type EmbeddingResponseDTO = OneOrMany<SingleEmbeddingResponseDTO>;
@@ -202,7 +199,17 @@ export type ResponseDTO = {
 
 //Utilities payload types
 
-export type Link = {link_id:string}
+export type LinkPayload = {link_id:string};
 
-export type Fragment = {fragment_id:string};
+export type ContentPayload = {content_id:string};
+
+export type MatchPayload = {match_id:string};
+
+export type FragmentPayload = {fragment_id:string};
+
+export type ModifiedQuestionPayload = {modified_question_id:string};
+
+export type AnswerPayload = {answer_id:string};
+
+export type ChunkPayload ={chunk_id:string};
 

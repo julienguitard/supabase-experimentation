@@ -38,7 +38,7 @@ begin
         merge into links t
         using links_update_buffer s
         on t.id = s.id 
-        when matched then update set t.category = s.category
+        when matched then update set category = s.category
         when not matched then do nothing
         returning t.*
     )

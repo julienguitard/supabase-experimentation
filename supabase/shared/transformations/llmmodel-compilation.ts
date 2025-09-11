@@ -1,11 +1,11 @@
 import type { SingleLLMRequestDTO, AIClient, SingleEmbeddingRequestDTO, OpenAI } from "@types";
 import { isAnthropicClient, isDeepSeekClient, isOpenAIClient } from "../../../packages/types/guards.ts";
 
-export async function invoke(aiClient:AIClient,singleLLMReuquestDTO:SingleLLMRequestDTO):Promise<string>{
+export async function invoke(aiClient:AIClient,singleLLMRequestDTO:SingleLLMRequestDTO):Promise<string>{
     if (isOpenAIClient(aiClient)) {
         let response:string;
         try {
-            const response_ = await aiClient.chat.completions.create({model: singleLLMReuquestDTO.model, messages: singleLLMReuquestDTO.messages, max_tokens: singleLLMReuquestDTO.maxToken, temperature: singleLLMReuquestDTO.temperature});
+            const response_ = await aiClient.chat.completions.create({model: singleLLMRequestDTO.model, messages: singleLLMRequestDTO.messages, max_tokens: singleLLMRequestDTO.maxToken, temperature: singleLLMRequestDTO.temperature});
             response = response_.choices[0]?.message?.content || "";
         }
         catch (error) {
@@ -16,7 +16,7 @@ export async function invoke(aiClient:AIClient,singleLLMReuquestDTO:SingleLLMReq
     else if (isAnthropicClient(aiClient)) {
         let response:string;
         try {
-            const response_ = await aiClient.messages.create({model: singleLLMReuquestDTO.model, messages: singleLLMReuquestDTO.messages, max_tokens: singleLLMReuquestDTO.maxToken, temperature: singleLLMReuquestDTO.temperature});
+            const response_ = await aiClient.messages.create({model: singleLLMRequestDTO.model, messages: singleLLMRequestDTO.messages, max_tokens: singleLLMRequestDTO.maxToken, temperature: singleLLMRequestDTO.temperature});
             response = response_.choices[0]?.message?.content || "";
         }
         catch (error) {
@@ -27,7 +27,7 @@ export async function invoke(aiClient:AIClient,singleLLMReuquestDTO:SingleLLMReq
     else if (isDeepSeekClient(aiClient)) {
         let response:string;
         try {
-            const response_ = await aiClient.chat.completions.create({model: singleLLMReuquestDTO.model, messages: singleLLMReuquestDTO.messages, max_tokens: singleLLMReuquestDTO.maxToken, temperature: singleLLMReuquestDTO.temperature});
+            const response_ = await aiClient.chat.completions.create({model: singleLLMRequestDTO.model, messages: singleLLMRequestDTO.messages, max_tokens: singleLLMRequestDTO.maxToken, temperature: singleLLMRequestDTO.temperature});
             response = response_.choices[0]?.message?.content || "";
         }
         catch (error) {
