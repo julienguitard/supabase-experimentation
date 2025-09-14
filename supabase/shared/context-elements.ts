@@ -45,11 +45,13 @@ export function createBrowserlessClient(ctx:Env=Deno.env):BrowserlessClient{
         completeBody: (fetchableUrl:string)=>{
             return {
               url: fetchableUrl,
-              elements: [
-                  {
-                      selector:'p'
-                  }
-              ]
+              elements: 
+                  /*[
+                    'article', 'main', 'section', 
+                    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                    'p', 'div', 'span', 'li'
+                  ].map(selector => ({ selector }))*/
+                  ['p'].map(selector => ({ selector }))
           }
         }
     }

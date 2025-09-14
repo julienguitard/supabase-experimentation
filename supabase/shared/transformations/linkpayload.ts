@@ -15,11 +15,22 @@ export async function fetchSingleScrapable(single:SingleScrapableDTO, browserles
     const init:RequestInit = browserlessClient ? {method, headers, body} : {method, headers}
     const response = await fetch(url!, init)
     const body_ = await response.text()
+    const body__ = body_
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const status = response.status
     const headers_ = response.headers
     const statusText = response.statusText
     const error:Option<string> = statusText ? statusText : null
-    return {status, headers:headers_, body:body_, error,...payload}
+    return {status, headers:headers_, body:body__, error,...payload}
 }
 
 export function formatToLinkPayload(scrapedDTO:SingleScrapedDTO,hexCodec:HexCodec):LinkPayload&{status:number,hex_content:string,hex_error:string}{

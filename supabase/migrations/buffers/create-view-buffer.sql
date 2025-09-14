@@ -1,11 +1,3 @@
-drop if exists questions_to_answer_with_chunks_buffer;
-
-create table questions_to_answer_with_chunks_buffer as (
-  select id, created_at, chunk_id, chunk, user_id from questions_to_answer_with_chunks
-  where false
-);
-
-
 drop view if exists matches_with_question_chunks_select_buffer cascade;
 
 create view matches_with_question_chunks_select_buffer as (

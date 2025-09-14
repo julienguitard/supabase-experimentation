@@ -131,3 +131,9 @@ create table answers_insert_buffer as (
   where false
 );
 
+drop table if exists questions_to_answer_with_chunks_buffer;
+
+create table questions_to_answer_with_chunks_buffer as (
+  select id, created_at, chunk_id, chunk, user_id from questions_to_answer_with_chunks
+  where false
+);

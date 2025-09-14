@@ -6,11 +6,13 @@ import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
 
 // Utility generic types
+
 export type Option<T> = T | null;
 
-export type OneOrMany<T> = T | T[];
+export type SingleOrArray<T> = T | T[];
 
 // Environment & clients types
+
 export type Env = {
     get(key: string): Option<string>;
     // ...other methods like set, delete, toObjec;t, etc.
@@ -45,7 +47,6 @@ export type Tokenizer = {
     chunkHexContent: (input:string,x?:Record<string,any>)=>{x,chunk:string,start_:number,end_:number,length_:number}[];
 }
 
-
 export type ClientsContext = {
     browserlessClient?: BrowserlessClient;
     hexCodec?: HexCodec;
@@ -60,7 +61,6 @@ export type User = {
 
 // Business and data types
 
-
 export type RequestDTO = {
     method:string;
     url?: string;
@@ -71,17 +71,17 @@ export type RequestDTO = {
 
 export type SingleScrapableDTO = RequestDTO
 
-export type ScrapableDTO = OneOrMany<SingleScrapableDTO>;
+export type ScrapableDTO = SingleOrArray<SingleScrapableDTO>;
 
 export type SingleScrapedDTO = ResponseDTO
 
 export type ScrapeQuery = {
     scrapableDTO: ScrapableDTO;
-    browserlessClient?: BrowserlessClient;
+    browserlessClient?: BrowserlessClient; //Not allowed to use concurrently with browserless.io
     browser?: Browser;
 }
 
-export type ScrapedDTO = OneOrMany<SingleScrapedDTO>;
+export type ScrapedDTO = SingleOrArray<SingleScrapedDTO>;
 
 export type SingleTokenizableDTOWithFragment = {
     fragment:string
@@ -93,7 +93,7 @@ export type SingleTokenizableDTOWithHexFragment = {
 
 export type SingleTokenizableDTO = SingleTokenizableDTOWithFragment | SingleTokenizableDTOWithHexFragment;
 
-export type TokenizableDTO = OneOrMany<SingleTokenizableDTO>;
+export type TokenizableDTO = SingleOrArray<SingleTokenizableDTO>;
 
 export type TokenizerExecutor = {
     tokenizer: Tokenizer;
@@ -101,12 +101,14 @@ export type TokenizerExecutor = {
 }
 
 //Never used in practice because the tokenizer always returns a list
+
 export type SingleTokenizedDTOWithFragment = {
     chunk:string,
     start_:number,
     end_:number,
     length_:number
 }
+
 //Never used in practice because the tokenizer always returns a list
 
 export type SingleTokenizedDTOWithHexFragment = {
@@ -115,11 +117,12 @@ export type SingleTokenizedDTOWithHexFragment = {
     end_:number,
     length_:number
 }
+
 //Never used in practice because the tokenizer always returns a list
 
 export type SingleTokenizedDTO = SingleTokenizedDTOWithFragment | SingleTokenizedDTOWithHexFragment;
 
-export type TokenizedDTO = OneOrMany<SingleTokenizedDTO>;
+export type TokenizedDTO = SingleOrArray<SingleTokenizedDTO>;
 
 export type Message<T> = {
     role: string;
@@ -133,12 +136,12 @@ export type SingleLLMRequestDTO = {
     messages: Message<string>[];
 }
 
-export type LLMRequestDTO<M extends Record<string,string>> = OneOrMany<SingleLLMRequestDTO>;
+export type LLMRequestDTO<M extends Record<string,string>> = SingleOrArray<SingleLLMRequestDTO>;
 
 export type AIClient = OpenAI | Anthropic | DeepSeek;
 
 export type LLMModel<M extends Record<string,string>> = {
-    client: AIClient;
+    client: SingleOrArray<AIClient>;
     LLMRequestDTO:LLMRequestDTO<M>;
     invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
 }
@@ -148,7 +151,7 @@ export type SingleLLMResponseDTO = {
     response_type?: string;
 }
 
-export type LLMResponseDTO = OneOrMany<SingleLLMResponseDTO>;
+export type LLMResponseDTO = SingleOrArray<SingleLLMResponseDTO>;
 
 export type SingleEmbeddingRequestDTO = {
     model: string;
@@ -156,10 +159,10 @@ export type SingleEmbeddingRequestDTO = {
     chunk_id: string;
 };
 
-export type EmbeddingRequestDTO = OneOrMany<SingleEmbeddingRequestDTO>;
+export type EmbeddingRequestDTO = SingleOrArray<SingleEmbeddingRequestDTO>;
 
 export type EmbeddingModel = {
-    client: AIClient;
+    client: SingleOrArray<AIClient>;
     embeddingRequestDTO:EmbeddingRequestDTO;
     vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>Promise<number[]>;
 }
@@ -168,7 +171,7 @@ export type SingleEmbeddingResponseDTO = {
     embeddings: number[];
 };
 
-export type EmbeddingResponseDTO = OneOrMany<SingleEmbeddingResponseDTO>;
+export type EmbeddingResponseDTO = SingleOrArray<SingleEmbeddingResponseDTO>;
 
 export type DBQueryDTO = {
   statement:string;

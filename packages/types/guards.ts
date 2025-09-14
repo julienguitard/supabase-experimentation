@@ -2,7 +2,7 @@ import type { OpenAI} from "npm:@types/openai";
 import type {Anthropic} from 'npm:@anthropic-ai/sdk';
 import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
-import type {  AIClient, ScrapableDTO, ScrapedDTO, LLMRequestDTO, LLMResponseDTO,   SingleScrapableDTO, SingleScrapedDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO} from "./index.ts";
+import type {  AIClient, ScrapableDTO, ScrapedDTO, LLMRequestDTO, LLMResponseDTO,   SingleScrapableDTO, SingleScrapedDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO, LLMModel} from "./index.ts";
 
 export function isSingleScrapableDTO(scrapableDTO:ScrapableDTO):scrapableDTO is SingleScrapableDTO{
     return 'url' in scrapableDTO;
@@ -107,4 +107,12 @@ export function isSingleEmbeddingRequestDTO(embeddingRequestDTO:EmbeddingRequest
 
 export function isSingleEmbeddingResponseDTO(embeddingResponseDTO:EmbeddingResponseDTO):embeddingResponseDTO is SingleEmbeddingResponseDTO{
     return 'embedding' in embeddingResponseDTO;
+}
+
+export function isSingleAIClient(client:AIClient):client is AIClient{
+    return ('chat' in client && typeof (client as any).chat?.completions?.create === 'function') || ('messages' in client && typeof (client as any).messages?.create === 'function') || ('baseURL' in client && typeof (client as any).baseURL?.includes('deepseek') === 'function');
+}
+
+export function hasSingleAIClient(llmModel:LLMModel):llmModel is LLMModel{
+    return isSingleAIClient(llmModel.client);
 }

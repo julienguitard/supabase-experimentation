@@ -108,7 +108,7 @@ with
     order by
       random()
     limit
-      3
+      10
   );
 
 -- Summaries
@@ -320,7 +320,7 @@ with
     order by
       random()
     limit
-      10
+      30
   );
 
 -- Chunks
@@ -353,7 +353,7 @@ with
     order by
       random()
     limit
-      20
+      200
   );
   
 -- Vectors  
