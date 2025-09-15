@@ -142,8 +142,8 @@ export type AIClient = OpenAI | Anthropic | DeepSeek;
 
 export type LLMModel<M extends Record<string,string>> = {
     client: SingleOrArray<AIClient>;
-    LLMRequestDTO:LLMRequestDTO<M>;
-    invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
+    llmRequestDTO:LLMRequestDTO<M>;
+    invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
 }
 
 export type SingleLLMResponseDTO = {

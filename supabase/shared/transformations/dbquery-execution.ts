@@ -1,5 +1,5 @@
 import type { Client } from "@supabase/supabase-js";
-import type { DBResponseDTO } from "../../../packages/types";
+import type { DBResponseDTO } from "../../../packages/types/index.ts";
 
 export async function executeSelectQuery(client:Client, table:string, id?:string):Promise<DBResponseDTO<T>>{
     try {

@@ -1,7 +1,7 @@
-import { AIClient } from "../../../packages/types";
+import { AIClient } from "../../../packages/types/index.ts";
 
 
-export function distributeClientDataSlice(clients:AIClient[], dataSlice:any[]):[AIClient,any[]][]{
+export function distributeClientDataSlice<T>(clients:AIClient[], dataSlice:T[]):[AIClient,T[]][]{
     const clientLength = clients.length;
     const dataSliceLength = dataSlice.length;
     const dataSliceLengthPerClient = dataSliceLength / clientLength;

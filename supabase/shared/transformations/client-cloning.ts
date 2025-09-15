@@ -1,4 +1,4 @@
-import { AIClient } from "../../../packages/types";
+import { AIClient } from "../../../packages/types/index.ts";
 
 
 export function cloneClient(client:AIClient,n:number):AIClient[]{

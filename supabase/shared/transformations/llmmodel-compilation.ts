@@ -1,7 +1,7 @@
 import type { SingleLLMRequestDTO, AIClient, SingleEmbeddingRequestDTO, OpenAI } from "@types";
 import { isAnthropicClient, isDeepSeekClient, isOpenAIClient } from "../../../packages/types/guards.ts";
 
-export async function invoke(aiClient:AIClient,singleLLMRequestDTO:SingleLLMRequestDTO):Promise<string>{
+export async function invoke(aiClient:AIClient,singlellmRequestDTO:SingleLLMRequestDTO):Promise<string>{
     if (isOpenAIClient(aiClient)) {
         let response:string;
         try {

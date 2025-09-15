@@ -71,8 +71,8 @@ export function isListOfTokenizedDTOWithFragment(tokenizedDTO:TokenizedDTO):toke
 }
 
 
-export function isSingleLLMRequestDTO(LLMRequestDTO:LLMRequestDTO):LLMRequestDTO is SingleLLMRequestDTO{
-    return 'model' in LLMRequestDTO;
+export function isSingleLLMRequestDTO(llmRequestDTO:LLMRequestDTO):llmRequestDTO is SingleLLMRequestDTO{
+    return 'model' in llmRequestDTO;
 }
 
 export function isSingleLLMResponseDTO(LLMResponseDTO:LLMResponseDTO):LLMResponseDTO is SingleLLMResponseDTO{
@@ -102,7 +102,6 @@ export function isDeepSeekClient(client:AIClient):client is DeepSeek{
 export function isSingleEmbeddingRequestDTO(embeddingRequestDTO:EmbeddingRequestDTO):embeddingRequestDTO is SingleEmbeddingRequestDTO{
     return 'model' in embeddingRequestDTO;
 }
-
 
 
 export function isSingleEmbeddingResponseDTO(embeddingResponseDTO:EmbeddingResponseDTO):embeddingResponseDTO is SingleEmbeddingResponseDTO{
