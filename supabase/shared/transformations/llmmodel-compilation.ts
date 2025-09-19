@@ -1,10 +1,11 @@
-import type { SingleLLMRequestDTO, AIClient, SingleEmbeddingRequestDTO, OpenAI } from "@types";
+import type { SingleLLMRequestDTO, SingleAIClient, SingleEmbeddingRequestDTO, OpenAI } from "@types";
 import { isAnthropicClient, isDeepSeekClient, isOpenAIClient } from "../../../packages/types/guards.ts";
 
-export async function invoke(aiClient:AIClient,singlellmRequestDTO:SingleLLMRequestDTO):Promise<string>{
+export async function invokeSingleClient(aiClient:SingleAIClient,singleLLMRequestDTO:SingleLLMRequestDTO):Promise<string>{
     if (isOpenAIClient(aiClient)) {
         let response:string;
         try {
+            console.log(`[${Date.now()}] Invoking OpenAI client`,singleLLMRequestDTO.model);
             const response_ = await aiClient.chat.completions.create({model: singleLLMRequestDTO.model, messages: singleLLMRequestDTO.messages, max_tokens: singleLLMRequestDTO.maxToken, temperature: singleLLMRequestDTO.temperature});
             response = response_.choices[0]?.message?.content || "";
         }

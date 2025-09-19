@@ -33,6 +33,7 @@ with
               denormalized_contents
             where
               status = '200'
+              and created_at > (now() - interval '5 days')
           ) c on c.link_id = l.id
       )
     where

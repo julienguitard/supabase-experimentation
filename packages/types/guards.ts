@@ -112,6 +112,7 @@ export function isSingleAIClient(client:AIClient):client is AIClient{
     return ('chat' in client && typeof (client as any).chat?.completions?.create === 'function') || ('messages' in client && typeof (client as any).messages?.create === 'function') || ('baseURL' in client && typeof (client as any).baseURL?.includes('deepseek') === 'function');
 }
 
-export function hasSingleAIClient(llmModel:LLMModel):llmModel is LLMModel{
-    return isSingleAIClient(llmModel.client);
+export function hasSingleAIClient<M extends Record<string,string>>(llmModel:LLMModel<M>):llmModel is LLMModel<M>{
+    return (typeof llmModel.invoke) === 'function';
 }
+

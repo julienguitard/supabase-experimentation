@@ -138,12 +138,13 @@ export type SingleLLMRequestDTO = {
 
 export type LLMRequestDTO<M extends Record<string,string>> = SingleOrArray<SingleLLMRequestDTO>;
 
-export type AIClient = OpenAI | Anthropic | DeepSeek;
+export type SingleAIClient = OpenAI | Anthropic | DeepSeek;
+
+export type AIClient = SingleOrArray<SingleAIClient>;
 
 export type LLMModel<M extends Record<string,string>> = {
-    client: SingleOrArray<AIClient>;
     llmRequestDTO:LLMRequestDTO<M>;
-    invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>Promise<string>;
+    invoke: SingleOrArray<(singlellmRequestDTO:SingleLLMRequestDTO)=>Promise<string>>;
 }
 
 export type SingleLLMResponseDTO = {

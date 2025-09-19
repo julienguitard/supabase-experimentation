@@ -1,10 +1,10 @@
 import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, ScrapableDTO, SingleScrapableDTO, ScrapedDTO, ContentsRowDTO, TextCodec, HexCodec, Browser, BrowserFactory, ScrapeQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI, LinkPayload, ContentPayload, ChunkPayload, FragmentPayload} from "@types";
-import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment, isSingleTokenizedDTOWithFragment, isSingleTokenizedDTO, isSingleAIClient } from "../../packages/types/guards.ts";
+import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment, isSingleTokenizedDTOWithFragment, isSingleTokenizedDTO, isSingleAIClient, hasSingleAIClient } from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleScrapedDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery, executeFunction } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent, formatMessageForModifyingQuestions, formatMessageForAnsweringQuestions } from "./transformations/llmrequestdto-formatting.ts";
-import { AIClient, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO, SingleTokenizedDTO, SingleTokenizableDTO, SingleTokenizableDTOWithHexFragment, ChunkPayload } from "../../packages/types/index.ts";
-import { invoke, vectorize } from "./transformations/llmmodel-compilation.ts";
+import { AIClient, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO, SingleTokenizedDTO, SingleTokenizableDTO, SingleTokenizableDTOWithHexFragment, ChunkPayload, SingleAIClient } from "../../packages/types/index.ts";
+import { invokeSingleClient, vectorize } from "./transformations/llmmodel-compilation.ts";
 import { createTokenizer, createTextCodec, createTokenEncoder } from "./context-elements.ts";
 import { translateSingleScrapableDTO,fetchSingleScrapable, formatToLinkPayload } from "./transformations/linkpayload.ts";
 import { executeSingleTokenizableWithHexFragmentDTO, formatToFragmentPayload } from "./transformations/fragmentpayload.ts";
@@ -12,7 +12,7 @@ import { executeSingleEmbeddingRequestDTO, formatToChunkPayload } from "./transf
 import { formatToContentPayload } from "./transformations/contentpayload.ts";
 import { formatToModifiedQuestionPayload } from "./transformations/modifiedquestionpayload.ts";
 import { cloneClient } from "./transformations/client-cloning.ts";
-import { distributeClientDataSlice } from "./transformations/client-dataslice-distribution.ts";
+import { distributeResourceDataSlice } from "./transformations/resource-dataslice-distribution.ts";
 
 export async function parseRequest(req:Request):RequestDTO{
     const url = new URL(req.url);
@@ -313,46 +313,60 @@ export function formatToLLMRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBResponse
     }
 }
 
-export function compileToLLMModel(llmRequestDTO:LLMRequestDTO,aiClient:AIClient):LLMModel{
+export function compileToLLMModel(llmRequestDTO:LLMRequestDTO,singleAIClient:SingleAIClient):LLMModel{
     if (isSingleLLMRequestDTO(llmRequestDTO)) {
-        return {client: aiClient, llmRequestDTO:llmRequestDTO, invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>invoke(aiClient,singlellmRequestDTO)};
+        return {llmRequestDTO:llmRequestDTO, invoke: (singlellmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(singleAIClient,singlellmRequestDTO)};
     }
     else {
         const length = llmRequestDTO.length;
         if (length <= 3) {
-            return {client: aiClient, llmRequestDTO:llmRequestDTO, invoke: (llmRequestDTO:LLMRequestDTO)=>invoke(aiClient,llmRequestDTO)};
+            console.log(`[${Date.now()}] No client cloning needed`);
+            return {llmRequestDTO:llmRequestDTO, invoke: (singllmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(singleAIClient,singllmRequestDTO)};
         }
         else {
-            return {client: cloneClient(aiClient, 1 + length/3), llmRequestDTO:llmRequestDTO, invoke: (llmRequestDTO:LLMRequestDTO)=>invoke(aiClient,llmRequestDTO)};
+            const clonedClient = cloneClient(singleAIClient, 1 + length/3);
+            const invoke = clonedClient.map((c)=>(singllmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(c,singllmRequestDTO));
+            console.log(`[${Date.now()}] Cloned client`,invoke.length);//TODO: remove
+            return {llmRequestDTO:llmRequestDTO, invoke: invoke};
         }
     }
 }
 
 export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>{
-    const {client, llmRequestDTO, invoke} = llmModel;
+    const {llmRequestDTO, invoke} = llmModel;
     if (isSingleLLMRequestDTO(llmRequestDTO)) {
-        if (isSingleAIClient(client)) {
-            const {model, maxToken, temperature, messages,...payload} = llmRequestDTO
-            const response = await invoke(llmRequestDTO);
-            return {response,...payload};
-        }
-        else {
-           throw new Error('Client is not a single AIClient');
-        }
+        const {model, maxToken, temperature, messages,...payload} = llmRequestDTO
+        const response = await invoke(llmRequestDTO);
+        return {response,...payload};
 
     }
     else {
-        const clientDataSlice = distributeClientDataSlice(client, llmRequestDTO);
         const llmResponseDTO:LLMResponseDTO = [];
-        for (const cds of clientDataSlice) {
-            const [singleClient, llmRequestDTOSlice] = cds;
-            for (const llmReq of llmRequestDTOSlice) {
+        if (hasSingleAIClient(llmModel)) {
+            console.log(`[${Date.now()}] Executing LLM model in the single client case`);//TODO: remove
+            for (const llmReq of llmRequestDTO) {
                 const {model, maxToken, temperature, messages,...payload} = llmReq
-                const response = await invoke(llmRequestDTO);
+                const response = await invoke(llmReq);
                 llmResponseDTO.push({response,...payload});
             }
+            return llmResponseDTO;
+            
         }
-        return llmResponseDTO;
+        else {
+            const resourceDataSlice = distributeResourceDataSlice(invoke, llmRequestDTO);
+            console.log(`[${Date.now()}] Distributed client data slice`,resourceDataSlice);//TODO: remove
+            
+            for (const cds of resourceDataSlice) {
+                const [singleInvoke, llmRequestDTOSlice] = cds;
+                for (const llmReq of llmRequestDTOSlice) {
+                    const {model, maxToken, temperature, messages,...payload} = llmReq
+                    const response = await singleInvoke(llmRequestDTO);
+                    llmResponseDTO.push({response,...payload});
+                }
+            }
+            return llmResponseDTO;
+        }
+
     }
 }
 
