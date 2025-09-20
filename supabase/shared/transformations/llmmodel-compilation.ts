@@ -5,7 +5,7 @@ export async function invokeSingleClient(aiClient:SingleAIClient,singleLLMReques
     if (isOpenAIClient(aiClient)) {
         let response:string;
         try {
-            console.log(`[${Date.now()}] Invoking OpenAI client`,singleLLMRequestDTO.model);
+            console.log(`[${Date.now()}] Invoking OpenAI client`,singleLLMRequestDTO);
             const response_ = await aiClient.chat.completions.create({model: singleLLMRequestDTO.model, messages: singleLLMRequestDTO.messages, max_tokens: singleLLMRequestDTO.maxToken, temperature: singleLLMRequestDTO.temperature});
             response = response_.choices[0]?.message?.content || "";
         }

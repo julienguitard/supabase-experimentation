@@ -63,11 +63,9 @@ export function createBrowserFactory(ctx:Env=Deno.env):BrowserFactory{
   async function browser():Promise<Browser>{
     try {
       const browserlessClient = createBrowserlessClient(ctx);
-      console.log(`[${Date.now()}] browserlessClient:`, browserlessClient);
       const browser = await puppeteer.connect({
       browserWSEndpoint: browserlessClient.url,
     })
-    console.log(`[${Date.now()}] browser:`, browser);
     return browser;
     }
     catch (error) {

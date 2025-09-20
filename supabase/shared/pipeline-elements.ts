@@ -124,7 +124,6 @@ export function compileToDBQuery(DBqueryDTO:DBQueryDTO,client:Client):DBQuery<Cl
     }
     else if  (rows && cacheTable && SQLFunction) {
         // Thunk approach because of the way supabase works otherwise a SQL string would fit better
-        console.log('Executing insert in cache table query',cacheTable, SQLFunction,rows);
         return {client, 
             query: ()=>executeInsertInCacheTableQuery(client, cacheTable, rows, SQLFunction)
         }
@@ -139,7 +138,6 @@ export function compileToDBQuery(DBqueryDTO:DBQueryDTO,client:Client):DBQuery<Cl
 
 export async function executeDBQuery(dbQuery:DBQuery<Client,T>):DBResponseDTO<T>{
     try {
-        console.log('Executing DB query',dbQuery.query);
         const {data, error} = await dbQuery.query();
         return {data, error};
     }
@@ -289,7 +287,6 @@ export function formatToLLMRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBResponse
     else {
         switch(egdeFunction){
             case 'summarize-links': {
-                console.log(data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCodec,d.hex_content, d.category), content_id: d.id})));
                 return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForSummarizingContent(hexCodec,d.hex_content, d.category), content_id: d.id}));
             }
             case 'answer-questions': {
@@ -320,13 +317,11 @@ export function compileToLLMModel(llmRequestDTO:LLMRequestDTO,singleAIClient:Sin
     else {
         const length = llmRequestDTO.length;
         if (length <= 3) {
-            console.log(`[${Date.now()}] No client cloning needed`);
             return {llmRequestDTO:llmRequestDTO, invoke: (singllmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(singleAIClient,singllmRequestDTO)};
         }
         else {
             const clonedClient = cloneClient(singleAIClient, 1 + length/3);
             const invoke = clonedClient.map((c)=>(singllmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(c,singllmRequestDTO));
-            console.log(`[${Date.now()}] Cloned client`,invoke.length);//TODO: remove
             return {llmRequestDTO:llmRequestDTO, invoke: invoke};
         }
     }
@@ -343,7 +338,6 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
     else {
         const llmResponseDTO:LLMResponseDTO = [];
         if (hasSingleAIClient(llmModel)) {
-            console.log(`[${Date.now()}] Executing LLM model in the single client case`);//TODO: remove
             for (const llmReq of llmRequestDTO) {
                 const {model, maxToken, temperature, messages,...payload} = llmReq
                 const response = await invoke(llmReq);
@@ -354,13 +348,12 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
         }
         else {
             const resourceDataSlice = distributeResourceDataSlice(invoke, llmRequestDTO);
-            console.log(`[${Date.now()}] Distributed client data slice`,resourceDataSlice);//TODO: remove
             
             for (const cds of resourceDataSlice) {
                 const [singleInvoke, llmRequestDTOSlice] = cds;
                 for (const llmReq of llmRequestDTOSlice) {
                     const {model, maxToken, temperature, messages,...payload} = llmReq
-                    const response = await singleInvoke(llmRequestDTO);
+                    const response = await singleInvoke(llmReq);
                     llmResponseDTO.push({response,...payload});
                 }
             }
@@ -452,7 +445,6 @@ export function formatToEmbeddingRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBRe
         throw new Error('Error formatting to embedding request DTO');
     }
     else {
-        console.log('Formatting to embedding request DTO!',data);
         return data.map((d)=>({model: 'text-embedding-3-small', input: hexCodec.decode(d.chunk), chunk_id: d.id }));
     }
 }   
