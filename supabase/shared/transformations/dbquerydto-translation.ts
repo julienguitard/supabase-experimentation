@@ -103,6 +103,10 @@ export function edgeFunctionToSQLFunction(edgeFunction:string,step?:string):Opti
             switch(step){
                 case 'match-question-with-chunks':
                     return 'insert_into_various_from_questions_to_answer_with_chunks_agg'
+                case 'insert-modified-questions':
+                    return 'insert_into_modified_questions_with_chunks_agg'                 
+                case 'insert-answers':
+                    return 'insert_into_answers'
                 default:
                     return null;
             }

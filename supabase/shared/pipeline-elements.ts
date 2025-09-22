@@ -10,6 +10,7 @@ import { translateSingleScrapableDTO,fetchSingleScrapable, formatToLinkPayload }
 import { executeSingleTokenizableWithHexFragmentDTO, formatToFragmentPayload } from "./transformations/fragmentpayload.ts";
 import { executeSingleEmbeddingRequestDTO, formatToChunkPayload } from "./transformations/chunkpayload.ts";
 import { formatToContentPayload } from "./transformations/contentpayload.ts";
+import { formatToMatchPayload } from "./transformations/matchpayload.ts";
 import { formatToModifiedQuestionPayload } from "./transformations/modifiedquestionpayload.ts";
 import { cloneClient } from "./transformations/client-cloning.ts";
 import { distributeResourceDataSlice } from "./transformations/resource-dataslice-distribution.ts";
@@ -293,10 +294,10 @@ export function formatToLLMRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBResponse
                 switch(step){
                     case 'modify-questions': {
                         return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, 
-                            messages:  formatMessageForModifyingQuestions(hexCodec,d.hex_question, d.hex_chunks), match_id: d.match_id}));
+                            messages:  formatMessageForModifyingQuestions(hexCodec,d.hex_question, d.hex_chunks.filter((c)=>c !== null)), match_id: d.match_id}));
                     }
                     case 'answer-questions':{
-                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCodec,d.hex_modified_question, d.hex_chunks),modified_question_id: d.id}));
+                        return data.map((d)=>({model: 'gpt-4o-mini', maxToken: 1000, temperature: 0.5, messages:  formatMessageForAnsweringQuestions(hexCodec,d.hex_modified_question, d.hex_chunks.filter((c)=>c !== null)),modified_question_id: d.id}));
                     }
                     default: {
                         throw new Error('Wrong step');
@@ -370,7 +371,8 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
             if (isSingleLLMResponseDTO(llmResponseDTO)) {
                 try {
                     const rows = formatToContentPayload(llmResponseDTO,hexCodec);
-                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction: 'insert_into_summaries'};
+                    const SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction};
                 }
                 catch (error) {
                     console.error(error);
@@ -379,7 +381,8 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
             else {
                 try{
                     const rows = llmResponseDTO.map((llmResponseDTO)=>formatToContentPayload(llmResponseDTO,hexCodec));
-                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction: 'insert_into_summaries'};
+                    const SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+                    return {statement: 'insert', cacheTable: 'summaries_insert_buffer', rows, SQLFunction};
                 }
                 catch (error) {
                     console.error(error);
@@ -391,8 +394,9 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
                 case 'insert-modified-questions': {
                     if (isSingleLLMResponseDTO(llmResponseDTO)) {
                         try {
-                            const rows = formatToModifiedQuestionPayload(llmResponseDTO,hexCodec);
-                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                            const rows = formatToMatchPayload(llmResponseDTO,hexCodec);
+                            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction};
                         }
                         catch (error) {
                             console.error(error);
@@ -400,8 +404,9 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
                     }   
                     else {
                         try {
-                            const rows = llmResponseDTO.map((llmResponseDTO)=>formatToModifiedQuestionPayload(llmResponseDTO,hexCodec));
-                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                            const rows = llmResponseDTO.map((llmResponseDTO)=>formatToMatchPayload(llmResponseDTO,hexCodec));
+                            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction};
                         }
                         catch (error) {
                             console.error(error);
@@ -412,7 +417,8 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
                     if (isSingleLLMResponseDTO(llmResponseDTO)) {
                         try {
                             const rows = formatToModifiedQuestionPayload(llmResponseDTO,hexCodec);
-                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+                            return {statement: 'insert', cacheTable: 'answers_insert_buffer', rows, SQLFunction};
                         }
                         catch (error) {
                             console.error(error);
@@ -421,12 +427,12 @@ export function translateLLMResponseDTOToDBQueryDTO(llmResponseDTO:LLMResponseDT
                     else {  
                         try {
                             const rows = llmResponseDTO.map((llmResponseDTO)=>formatToModifiedQuestionPayload(llmResponseDTO,hexCodec));
-                            return {statement: 'insert', cacheTable: 'modified_questions_insert_buffer', rows, SQLFunction: 'insert_into_modified_questions_with_chunks_agg'};
+                            const SQLFunction = edgeFunctionToSQLFunction(edgeFunction,step);
+                            return {statement: 'insert', cacheTable: 'answers_insert_buffer', rows, SQLFunction};
                         }
                         catch (error) {
                             console.error(error);
                         }
-                        return {statement: 'insert', cacheTable: 'answers_insert_buffer', rows, SQLFunction: 'insert_into_answers'};
                     }
                 }
                 default: {
