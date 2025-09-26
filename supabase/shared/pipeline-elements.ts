@@ -1,11 +1,10 @@
 import type {Option, RequestDTO, DBQueryDTO, DBQuery, DBResponseDTO, ResponseDTO, ScrapableDTO, SingleScrapableDTO, ScrapedDTO, ContentsRowDTO, TextCodec, HexCodec, Browser, BrowserFactory, ScrapeQuery, Client, BrowserlessClient, LLMRequestDTO,LLMModel, LLMResponseDTO, OpenAI, LinkPayload, ContentPayload, ChunkPayload, FragmentPayload} from "@types";
-import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment, isSingleTokenizedDTOWithFragment, isSingleTokenizedDTO, isSingleAIClient, hasSingleAIClient } from "../../packages/types/guards.ts";
+import { isListOfTokenizableDTOWithHexFragment, isSingleScrapableDTO, isSingleScrapedDTO, isSingleEmbeddingRequestDTO, isSingleEmbeddingResponseDTO, isSingleLLMRequestDTO, isSingleLLMResponseDTO, isSingleTokenizableDTOWithHexFragment, isSingleTokenizedDTOWithHexFragment, isSingleTokenizedDTOWithFragment, isSingleTokenizedDTO, hasSingleAIClient, hasSingleVectorize} from "../../packages/types/guards.ts";
 import { edgeFunctionToStatement,  edgeFunctionToSQLFunction, edgeFunctionToCacheTable, translateSingleScrapedDTOToContentsRowDTO, edgeFunctionToTable } from "./transformations/dbquerydto-translation.ts";
 import { executeSelectQuery, executeInsertInCacheTableQuery, executeFunction } from "./transformations/dbquery-execution.ts";
 import { formatMessageForSummarizingContent, formatMessageForModifyingQuestions, formatMessageForAnsweringQuestions } from "./transformations/llmrequestdto-formatting.ts";
 import { AIClient, EmbeddingRequestDTO, SingleLLMRequestDTO, TokenizableDTO, TokenizedDTO, Tokenizer, TokenizerExecutor, SingleEmbeddingRequestDTO, EmbeddingModel, EmbeddingResponseDTO, SingleTokenizedDTO, SingleTokenizableDTO, SingleTokenizableDTOWithHexFragment, ChunkPayload, SingleAIClient } from "../../packages/types/index.ts";
-import { invokeSingleClient, vectorize } from "./transformations/llmmodel-compilation.ts";
-import { createTokenizer, createTextCodec, createTokenEncoder } from "./context-elements.ts";
+import { invokeSingleClient, vectorizeWithSingleClient} from "./transformations/llmmodel-compilation.ts";
 import { translateSingleScrapableDTO,fetchSingleScrapable, formatToLinkPayload } from "./transformations/linkpayload.ts";
 import { executeSingleTokenizableWithHexFragmentDTO, formatToFragmentPayload } from "./transformations/fragmentpayload.ts";
 import { executeSingleEmbeddingRequestDTO, formatToChunkPayload } from "./transformations/chunkpayload.ts";
@@ -318,12 +317,12 @@ export function compileToLLMModel(llmRequestDTO:LLMRequestDTO,singleAIClient:Sin
     else {
         const length = llmRequestDTO.length;
         if (length <= 3) {
-            return {llmRequestDTO:llmRequestDTO, invoke: (singllmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(singleAIClient,singllmRequestDTO)};
+            return {llmRequestDTO:llmRequestDTO, invoke: (singleLLMRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(singleAIClient,singleLLMRequestDTO)};
         }
         else {
             const clonedClient = cloneClient(singleAIClient, 1 + length/3);
-            const invoke = clonedClient.map((c)=>(singllmRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(c,singllmRequestDTO));
-            return {llmRequestDTO:llmRequestDTO, invoke: invoke};
+            const invoke = clonedClient.map((c)=>(singleLLMRequestDTO:SingleLLMRequestDTO)=>invokeSingleClient(c,singleLLMRequestDTO));
+            return {llmRequestDTO, invoke};
         }
     }
 }
@@ -349,7 +348,6 @@ export async function executeLLMModel(llmModel:LLMModel):Promise<LLMResponseDTO>
         }
         else {
             const resourceDataSlice = distributeResourceDataSlice(invoke, llmRequestDTO);
-            
             for (const cds of resourceDataSlice) {
                 const [singleInvoke, llmRequestDTOSlice] = cds;
                 for (const llmReq of llmRequestDTOSlice) {
@@ -455,24 +453,54 @@ export function formatToEmbeddingRequestDTO(hexCodec:HexCodec,dbResponseDTO:DBRe
     }
 }   
 
-export function compileToEmbeddingModel(aiClient:OpenAI,embeddingRequestDTO:EmbeddingRequestDTO):EmbeddingModel{
-    return {client: aiClient, embeddingRequestDTO:embeddingRequestDTO, vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>vectorize(aiClient,singleEmbeddingRequestDTO)};
+export function compileToEmbeddingModel(singleAIClient:OpenAI,embeddingRequestDTO:EmbeddingRequestDTO):EmbeddingModel{
+    if (isSingleEmbeddingRequestDTO(embeddingRequestDTO)) {
+        return {embeddingRequestDTO, vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>vectorizeWithSingleClient(singleAIClient,singleEmbeddingRequestDTO)};
+    }
+    else {
+        const length = embeddingRequestDTO.length;
+        if (length <= 3) {
+            return {embeddingRequestDTO, vectorize:(singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>vectorizeWithSingleClient(singleAIClient,singleEmbeddingRequestDTO)};
+        }
+        else {
+            const clonedClient = cloneClient(singleAIClient, 1 + length/3);
+            const vectorize = clonedClient.map((c)=>(singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>vectorizeWithSingleClient(c,singleEmbeddingRequestDTO));
+            return {embeddingRequestDTO,vectorize};
+        }
+    }
 }
 
 export async function executeEmbeddingModel(embeddingModel:EmbeddingModel):Promise<EmbeddingResponseDTO>{
-    const {client, embeddingRequestDTO, vectorize} = embeddingModel;
+    const {embeddingRequestDTO, vectorize} = embeddingModel;
     if (isSingleEmbeddingRequestDTO(embeddingRequestDTO)) {
-        const singleEmbeddingResponseDTO = await executeSingleEmbeddingRequestDTO(embeddingModel,embeddingRequestDTO);
-        return singleEmbeddingResponseDTO;
+        const {model, input,...payload } = embeddingRequestDTO
+        const embeddings = await vectorize(embeddingRequestDTO);
+        return {embeddings,...payload};
     }
     else {
         const embeddingResponseDTO:EmbeddingResponseDTO = [];
-        for (const singleEmbeddingRequestDTO of embeddingRequestDTO) {
-            const singleEmbeddingResponseDTO = await executeSingleEmbeddingRequestDTO(embeddingModel,singleEmbeddingRequestDTO);
-            embeddingResponseDTO.push(singleEmbeddingResponseDTO);
+        if (hasSingleVectorize(embeddingModel)) {
+            for (const singleEmbeddingRequestDTO of embeddingRequestDTO) {
+                const {model, input,...payload } = singleEmbeddingRequestDTO
+                const embeddings= await vectorize(singleEmbeddingRequestDTO);
+                embeddingResponseDTO.push({embeddings,...payload});
+            }
+            return embeddingResponseDTO;
         }
-        return embeddingResponseDTO;
+        else {
+            const resourceDataSlice = distributeResourceDataSlice(vectorize, embeddingRequestDTO);
+            for (const cds of resourceDataSlice) {
+                const [singleVectorize, embeddingRequesttDTOSlice] = cds;
+                for (const eReq of embeddingRequesttDTOSlice) {
+                    const {model, input,...payload } = eReq;
+                    const embeddings = await singleVectorize(eReq);
+                    embeddingResponseDTO.push({embeddings,...payload});
+                }
+            }
+            return embeddingResponseDTO;
+        }
     }
+      
 }
 
 export function translateEmbeddingResponseDTOToDBQueryDTO(hexCodec:HexCodec,embeddingResponseDTO:EmbeddingResponseDTO):DBQueryDTO <ChunkPayload>{

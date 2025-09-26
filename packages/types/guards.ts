@@ -2,7 +2,7 @@ import type { OpenAI} from "npm:@types/openai";
 import type {Anthropic} from 'npm:@anthropic-ai/sdk';
 import type {DeepSeek} from 'npm:@deepseek-ai/sdk';
 
-import type {  AIClient, ScrapableDTO, ScrapedDTO, LLMRequestDTO, LLMResponseDTO,   SingleScrapableDTO, SingleScrapedDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO, LLMModel} from "./index.ts";
+import type {  AIClient, ScrapableDTO, ScrapedDTO, LLMRequestDTO, LLMResponseDTO,   SingleScrapableDTO, SingleScrapedDTO, SingleLLMRequestDTO, SingleLLMResponseDTO, SingleTokenizableDTO, SingleTokenizableDTOWithFragment, SingleTokenizableDTOWithHexFragment, SingleTokenizedDTO, SingleTokenizedDTOWithHexFragment, SingleTokenizedDTOWithFragment,     TokenizableDTO, TokenizedDTO, EmbeddingRequestDTO, SingleEmbeddingRequestDTO, EmbeddingResponseDTO, SingleEmbeddingResponseDTO, LLMModel, EmbeddingModel} from "./index.ts";
 
 export function isSingleScrapableDTO(scrapableDTO:ScrapableDTO):scrapableDTO is SingleScrapableDTO{
     return 'url' in scrapableDTO;
@@ -70,7 +70,6 @@ export function isListOfTokenizedDTOWithFragment(tokenizedDTO:TokenizedDTO):toke
     return isEmpty || isNonEmpty;
 }
 
-
 export function isSingleLLMRequestDTO(llmRequestDTO:LLMRequestDTO):llmRequestDTO is SingleLLMRequestDTO{
     return 'model' in llmRequestDTO;
 }
@@ -103,7 +102,6 @@ export function isSingleEmbeddingRequestDTO(embeddingRequestDTO:EmbeddingRequest
     return 'model' in embeddingRequestDTO;
 }
 
-
 export function isSingleEmbeddingResponseDTO(embeddingResponseDTO:EmbeddingResponseDTO):embeddingResponseDTO is SingleEmbeddingResponseDTO{
     return 'embedding' in embeddingResponseDTO;
 }
@@ -114,5 +112,9 @@ export function isSingleAIClient(client:AIClient):client is AIClient{
 
 export function hasSingleAIClient<M extends Record<string,string>>(llmModel:LLMModel<M>):llmModel is LLMModel<M>{
     return (typeof llmModel.invoke) === 'function';
+}
+
+export function hasSingleVectorize(embeddingModel:EmbeddingModel):embeddingModel is EmbeddingModel {
+    return (typeof embeddingModel.vectorize) === 'function'
 }
 

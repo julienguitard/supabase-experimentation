@@ -1,11 +1,11 @@
 import { SingleEmbeddingRequestDTO, ChunkPayload, SingleEmbeddingResponseDTO, EmbeddingModel } from "../../../packages/types/index.ts";
 
-export async function executeSingleEmbeddingRequestDTO(embeddingModel:EmbeddingModel,embeddingRequestDTO:SingleEmbeddingRequestDTO):Promise<SingleEmbeddingResponseDTO>{
+/*export async function executeSingleEmbeddingRequestDTO(embeddingModel:EmbeddingModel,singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO):Promise<SingleEmbeddingResponseDTO>{
     const {vectorize} = embeddingModel;
-    const {model, input, ...payload} = embeddingRequestDTO;
+    const {model, input, ...payload} = singleEmbeddingRequestDTO;
     const response = await vectorize(embeddingRequestDTO);
     return {embeddings: response, ...payload};    
-}
+}*/
 
 
 export function formatToChunkPayload(embeddingResponseDTO:SingleEmbeddingResponseDTO):ChunkPayload&{embeddings:number[]}{

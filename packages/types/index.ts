@@ -136,14 +136,14 @@ export type SingleLLMRequestDTO = {
     messages: Message<string>[];
 }
 
-export type LLMRequestDTO<M extends Record<string,string>> = SingleOrArray<SingleLLMRequestDTO>;
+export type LLMRequestDTO = SingleOrArray<SingleLLMRequestDTO>;
 
 export type SingleAIClient = OpenAI | Anthropic | DeepSeek;
 
 export type AIClient = SingleOrArray<SingleAIClient>;
 
 export type LLMModel<M extends Record<string,string>> = {
-    llmRequestDTO:LLMRequestDTO<M>;
+    llmRequestDTO:LLMRequestDTO;
     invoke: SingleOrArray<(singlellmRequestDTO:SingleLLMRequestDTO)=>Promise<string>>;
 }
 
@@ -157,15 +157,13 @@ export type LLMResponseDTO = SingleOrArray<SingleLLMResponseDTO>;
 export type SingleEmbeddingRequestDTO = {
     model: string;
     input: string;
-    chunk_id: string;
 };
 
 export type EmbeddingRequestDTO = SingleOrArray<SingleEmbeddingRequestDTO>;
 
 export type EmbeddingModel = {
-    client: SingleOrArray<AIClient>;
     embeddingRequestDTO:EmbeddingRequestDTO;
-    vectorize: (singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>Promise<number[]>;
+    vectorize: SingleOrArray<(singleEmbeddingRequestDTO:SingleEmbeddingRequestDTO)=>Promise<number[]>>;
 }
 
 export type SingleEmbeddingResponseDTO = {
