@@ -63,7 +63,7 @@ with
               latest_links_vectors
             where
               status = '200'
-          ) c on cosine_distance (q.embeddings, c.embeddings) < 0.9 --TODO change with a realistic threshold
+          ) c on cosine_distance (q.embeddings, c.embeddings) < 0.3 --TODO change with a realistic threshold
       )
 order by
   cosine_distance_ asc
