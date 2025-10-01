@@ -129,7 +129,8 @@ create view questions_to_answer with (security_invoker = on) as
                 q.user_id,
                 case when a.id is null then true else false end as is_to_answer
                 from questions q
-                left join denormalized_answers a on a.question_id = q.id)
+                left join (select * from denormalized_answers where created_at > (now() - interval '2 hours')) a 
+                on a.question_id = q.id)
         where is_to_answer);
 
 drop view if exists questions_to_answer_extract;

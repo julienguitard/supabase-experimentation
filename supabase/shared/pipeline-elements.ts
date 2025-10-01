@@ -203,7 +203,7 @@ export async function executeScrapeQuery(scrapeQuery:ScrapeQuery):Promise<Scrape
                     link_id: singleScrapableDTO.link_id,
                     status: single.status,
                     headers: single.headers,
-                    body: single.body.slice(0,1000), // TO DO remove slice
+                    body: single.body, // TO DO remove slice
                     error: single.error
                 })
             }

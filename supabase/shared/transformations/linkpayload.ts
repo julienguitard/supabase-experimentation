@@ -2,8 +2,6 @@ import type { SingleScrapableDTO, BrowserlessClient, ScrapedDTO, LinkPayload, He
 import type { Option } from "../../../packages/types/index.ts";
 
 
-
-
 export function translateSingleScrapableDTO(scrapableDTO:SingleScrapableDTO,browserlessClient?:BrowserlessClient):SingleScrapableDTO{
     const {method, url, headers, body,...payload} = scrapableDTO;
     console.log("[translateSingleScrapableDTO] browserlessClient", browserlessClient.completeBody(url));
