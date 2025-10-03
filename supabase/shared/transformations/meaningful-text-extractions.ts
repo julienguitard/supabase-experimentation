@@ -1,70 +1,50 @@
 import type { Option } from "../../../packages/types/index.ts";
 
-
-//TO DO check deepseek generation of meaningful text cleaners
-
-export function extractMeaningfulText(data:any,cleaners: Array<(value: any, path: string) => any>
-):Option<string>
- {
-    function clean(value: any, path: string = ''): any {
-      // Apply all cleaners in sequence
-      let cleaned = value;
-      for (const cleaner of cleaners) {
-        cleaned = cleaner(cleaned, path);
-        if (cleaned == null) break; // Stop if cleaner returns null
-      }
-  
-      if (cleaned == null) return null;
-  
-      // Recursively clean children
-      if (Array.isArray(cleaned)) {
-        return cleaned
-          .map((item, index) => clean(item, `${path}[${index}]`))
-          .filter(item => item != null);
-      }
-  
-      if (typeof cleaned === 'object') {
-        const result: Record<string, any> = {};
-        for (const [key, val] of Object.entries(cleaned)) {
-          const cleanedVal = clean(val, path ? `${path}.${key}` : key);
-          if (cleanedVal != null) {
-            result[key] = cleanedVal;
-          }
-        }
-        return Object.keys(result).length > 0 ? result : null;
-      }
-  
-      return cleaned;
-    }
-  
-    return clean(data);
+export function cleanNullUndefined(value:null|undefined):string{
+  return ''
+}
+export function cleanBoolean(value: boolean):string{
+  if (value) {
+    return 'true'
   }
+  else {
+    return 'false'
+  }
+}
+export function cleanNumber(value: number):string{
+  return value.toString()
+}
 
+export function cleanString(value: string):string{
+  return value
+}
 
-  export const meaningfulTextCleaners = [
-    // Cleaner 1: Clean strings
-    (value, path) => {
-      if (typeof value === 'string') {
-        const cleaned = value.trim().replace(/\s+/g, ' ');
-        return cleaned.length > 10 ? cleaned : null;
-      }
-      return value;
-    },
-    
-    // Cleaner 2: Filter unwanted content
-    (value, path) => {
-      if (typeof value === 'string') {
-        const unwanted = ['error while loading', 'reload this page'];
-        return unwanted.some(u => value.includes(u)) ? null : value;
-      }
-      return value;
-    },
-    
-    // Cleaner 3: Extract specific fields
-    (value, path) => {
-      if (path.includes('text') || path.includes('html') || path.includes('description')) {
-        return value; // Keep these
-      }
-      return value; // Could filter others if needed
-    }
-  ]
+export function cleanArray(value: any[],clean:(any)=>string):string{
+  return value.map(item => clean(item)).join('\n')
+}
+
+export function cleanObject(value: Record<string, any>,keys:string[],clean:(any)=>string):string{
+  return Object.entries(value).filter(([key,value]) => keys.includes(key)).map(([key, value]) => `${clean(value)}`).join('\n')
+}
+
+export function cleanRecursively(value:any,keys:string[]):string{
+  if(typeof value === 'boolean'){
+    return cleanBoolean(value)
+  }
+  else if (!value){
+    return cleanNullUndefined(value)
+  }
+  else if(typeof value === 'number'){
+    return cleanNumber(value)
+  }
+  else if(typeof value === 'string'){
+    return cleanString(value)
+  }
+  else if(Array.isArray(value)){
+    return cleanArray(value,(v)=>cleanRecursively(v,keys))
+  }
+  else if(typeof value === 'object'){
+    return cleanObject(value,keys,(v)=>cleanRecursively(v,keys))
+  }
+}
+

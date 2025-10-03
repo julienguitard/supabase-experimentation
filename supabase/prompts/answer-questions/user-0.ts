@@ -1,1 +1,1 @@
-export const userPrompt = `Please reformulate this {question} with the following {chunks}`;
+export const userPrompt = `Please reformulate this <question>{question}</question> with the following <chunks>{chunks}</chunks>`;

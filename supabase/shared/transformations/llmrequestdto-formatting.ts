@@ -19,7 +19,7 @@ export function formatMessageForModifyingQuestions(hexCodec:HexCodec,hexQuestion
 
     const question = hexCodec.decode(hexQuestion);
     const chunks = hexChunks.map((hexChunk)=>hexCodec.decode(hexChunk)).join('\n');
-    const systemPrompt_ = systemPromptModifyQuestions;  
+    const systemPrompt_ = systemPromptModifyQuestions.replace('{question}', question).replace('{chunks}', chunks);;  
     const userPrompt_ = userPromptModifyQuestions.replace('{question}', question).replace('{chunks}', chunks);
     const messages = [{role: 'system', content: systemPrompt_}, {role: 'user', content: userPrompt_}];  
     return messages;
@@ -28,9 +28,9 @@ export function formatMessageForModifyingQuestions(hexCodec:HexCodec,hexQuestion
 export function formatMessageForAnsweringQuestions(hexCodec:HexCodec, hexModifiedQuestion:string, hexChunks:string[]):Message<string>[]{
     const modifiedQuestion = hexCodec.decode(hexModifiedQuestion);
     const chunks = hexChunks.map((hexChunk)=>hexCodec.decode(hexChunk)).join('\n');
-    const systemPrompt_ = systemPromptAnswerQuestions;
+    const systemPrompt_ = systemPromptAnswerQuestions.replace('{modified_question}', modifiedQuestion).replace('{chunks}', chunks);
     const answer_ = modifiedQuestion
-    const userPrompt_1 = userPromptModifyQuestions.replace('{modified_question}', modifiedQuestion).replace('{chunks}', chunks);
+    const userPrompt_1 = userPromptAnswerQuestions.replace('{modified_question}', modifiedQuestion).replace('{chunks}', chunks);
     const messages = [{role: 'system', content: systemPrompt_}, {role:'assistant',content:answer_}, {role: 'user', content: userPrompt_1}];
     return messages;
 }

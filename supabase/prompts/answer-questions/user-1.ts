@@ -1,1 +1,1 @@
-export const userPrompt = `Please anwser this {modified_question} that has been reformulated with the following {chunks}`;
+export const userPrompt = `Please anwser this <modified_question>{modified_question}</modified_question> that has been reformulated with the following <chunks>{chunks}</chunks>`;

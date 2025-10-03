@@ -129,7 +129,7 @@ create view questions_to_answer with (security_invoker = on) as
                 q.user_id,
                 case when a.id is null then true else false end as is_to_answer
                 from questions q
-                left join (select * from denormalized_answers where created_at > (now() - interval '2 hours')) a 
+                left join (select * from denormalized_answers where created_at > (now() - interval '5 minutes')) a --TO DO change with a realistic threshold
                 on a.question_id = q.id)
         where is_to_answer);
 
@@ -226,7 +226,7 @@ create view contents_to_fragment with (security_invoker = on) as
                 c.error,
                 c.content,
                 c.user_id,
-                case when f.id is null then true else false end as is_to_fragment
+                case when f.id is null and c.status = '200' then true else false end as is_to_fragment
                 from contents c
                 left join denormalized_contents_fragments f on f.content_id = c.id)
         where is_to_fragment);

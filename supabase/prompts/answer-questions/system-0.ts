@@ -8,4 +8,4 @@ You are a friendly assistant helping humans and Supabase application to refomula
 
 # Typical task
 
-'''Please please reformulate this {question} with the following {chunks}''' `
+'''Please please reformulate this <question>{question}</question> with the following <chunks>{chunks}</chunks>''' `
