@@ -1,0 +1,45 @@
+#.gitignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+## Dependency directories and package managers
+*node_modules*
+/.pnp*
+.yarn/*
+!.yarn/{patches,plugins,releases,versions}
+
+## Build output
+/build
+
+## Next.js output
+/.next/
+/out/
+
+## Testing output
+/coverage
+
+## Environment variable files or constants file
+.env
+.env.*
+*.env
+*constants*
+/supabase/config.toml
+config.toml
+
+
+
+## Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+## Miscellaneous
+.DS_Store
+*.pem
+
+## Vercel deployment
+.vercel
+
+## TypeScript
+*.tsbuildinfo
+next-env.d.ts
