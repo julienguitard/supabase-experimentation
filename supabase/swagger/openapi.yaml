@@ -1,0 +1,566 @@
+openapi: 3.0.3
+info:
+  title: Supabase Edge Functions API
+  description: |
+    API documentation for Supabase Edge Functions that handle link processing, 
+    content summarization, fragmentation, vectorization, and question answering.
+    
+    All endpoints require authentication via Bearer token in the Authorization header.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Production server
+  - url: http://localhost:54321/functions/v1
+    description: Local development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Database Operations
+    description: Direct database query operations
+  - name: Link Management
+    description: Operations for managing and fetching links
+  - name: Content Processing
+    description: Content summarization and processing
+  - name: Fragment Management
+    description: Fragment checking and chunking operations
+  - name: Vectorization
+    description: Vector embedding operations
+  - name: Question Management
+    description: Question CRUD operations and answering
+
+paths:
+  /select-table:
+    get:
+      tags:
+        - Database Operations
+      summary: Select all rows from a table
+      description: Retrieves all rows from the specified table
+      operationId: selectTable
+      parameters:
+        - name: table
+          in: query
+          required: true
+          description: Name of the table to query
+          schema:
+            type: string
+            example: users
+      responses:
+        '200':
+          description: Successful response with table data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /select-row:
+    get:
+      tags:
+        - Database Operations
+      summary: Select a specific row from a table
+      description: Retrieves a single row by ID from the specified table
+      operationId: selectRow
+      parameters:
+        - name: table
+          in: query
+          required: true
+          description: Name of the table to query
+          schema:
+            type: string
+            example: users
+        - name: id
+          in: query
+          required: true
+          description: ID of the row to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: Successful response with row data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /insert-links:
+    post:
+      tags:
+        - Link Management
+      summary: Insert new links
+      description: Inserts one or more links into the database
+      operationId: insertLinks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/LinkInsert'
+      responses:
+        '200':
+          description: Links successfully inserted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /update-links:
+    put:
+      tags:
+        - Link Management
+      summary: Update existing links
+      description: Updates one or more existing links
+      operationId: updateLinks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/LinkUpdate'
+      responses:
+        '200':
+          description: Links successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /delete-links:
+    delete:
+      tags:
+        - Link Management
+      summary: Delete links
+      description: Deletes one or more links from the database
+      operationId: deleteLinks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  link_id:
+                    type: string
+                    format: uuid
+                required:
+                  - link_id
+      responses:
+        '200':
+          description: Links successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /fetch-links:
+    post:
+      tags:
+        - Link Management
+      summary: Fetch and scrape links
+      description: |
+        Fetches links from the database, scrapes their content using Browserless,
+        and stores the scraped content back to the database as hex-encoded content.
+      operationId: fetchLinks
+      responses:
+        '200':
+          description: Links successfully fetched and scraped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /summarize-links:
+    post:
+      tags:
+        - Content Processing
+      summary: Summarize link contents
+      description: |
+        Retrieves links with content, uses AI to generate summaries,
+        and stores the summaries in hex-encoded format.
+      operationId: summarizeLinks
+      responses:
+        '200':
+          description: Links successfully summarized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /check-fragments:
+    post:
+      tags:
+        - Fragment Management
+      summary: Check fragments status
+      description: Checks the status and availability of fragments
+      operationId: checkFragments
+      responses:
+        '200':
+          description: Fragment status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /chunk-fragments:
+    post:
+      tags:
+        - Fragment Management
+      summary: Chunk fragments into smaller pieces
+      description: |
+        Retrieves fragments, tokenizes them using tiktoken,
+        and chunks them into smaller pieces with defined start/end positions.
+      operationId: chunkFragments
+      responses:
+        '200':
+          description: Fragments successfully chunked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /vectorize-chunks:
+    post:
+      tags:
+        - Vectorization
+      summary: Generate vector embeddings for chunks
+      description: |
+        Retrieves chunks, generates vector embeddings using OpenAI's embedding API,
+        and stores the embeddings for semantic search.
+      operationId: vectorizeChunks
+      responses:
+        '200':
+          description: Chunks successfully vectorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /insert-questions:
+    post:
+      tags:
+        - Question Management
+      summary: Insert new questions
+      description: |
+        Inserts one or more questions into the database.
+        Questions are hex-encoded before storage.
+      operationId: insertQuestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionInsert'
+      responses:
+        '200':
+          description: Questions successfully inserted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /update-questions:
+    put:
+      tags:
+        - Question Management
+      summary: Update existing questions
+      description: Updates one or more existing questions
+      operationId: updateQuestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionUpdate'
+      responses:
+        '200':
+          description: Questions successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /delete-questions:
+    delete:
+      tags:
+        - Question Management
+      summary: Delete questions
+      description: Deletes one or more questions from the database
+      operationId: deleteQuestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  question_id:
+                    type: string
+                    format: uuid
+                required:
+                  - question_id
+      responses:
+        '200':
+          description: Questions successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /answer-questions:
+    post:
+      tags:
+        - Question Management
+      summary: Answer questions using AI and semantic search
+      description: |
+        Multi-step pipeline that:
+        1. Matches questions with relevant chunks using vector similarity
+        2. Uses AI to modify/clarify the question based on context
+        3. Generates comprehensive answers using the matched chunks
+        4. Stores modified questions and answers
+      operationId: answerQuestions
+      responses:
+        '200':
+          description: Questions successfully answered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Supabase authentication
+
+  schemas:
+    LinkInsert:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          example: https://example.com/article
+        category:
+          type: string
+          example: technology
+        metadata:
+          type: object
+          additionalProperties: true
+
+    LinkUpdate:
+      type: object
+      required:
+        - link_id
+      properties:
+        link_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        category:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    QuestionInsert:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          example: What is artificial intelligence?
+        category:
+          type: string
+          example: AI
+        metadata:
+          type: object
+          additionalProperties: true
+
+    QuestionUpdate:
+      type: object
+      required:
+        - question_id
+        - question
+      properties:
+        question_id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        category:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        body:
+          type: string
+          description: Response body (may be JSON stringified)
+        error:
+          type: string
+          nullable: true
+          example: null
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 401
+            error: Unauthorized
+            message: Missing or invalid authentication token
+
+    BadRequestError:
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 400
+            error: Bad Request
+            message: Invalid request format
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 404
+            error: Not Found
+            message: Resource not found
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 500
+            error: Internal Server Error
+            message: An unexpected error occurred
+

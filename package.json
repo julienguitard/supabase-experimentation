@@ -13,6 +13,7 @@
     "lint": "pnpm -r lint"
   },
   "dependencies": {
+    "pnpm": "^10.18.2",
     "supabase": "^2.26.9"
   }
 }

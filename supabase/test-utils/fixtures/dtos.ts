@@ -138,9 +138,9 @@ export const makeDBQueryDTO = (overrides: Partial<DBQueryDTO> = {}): DBQueryDTO 
 })
 
 export const makeDBResponseDTO = <T>(
-  overrides: Partial<DBResponseDTO<T>> = {}
+  overrides: Partial<DBResponseDTO<T>> = {}, mockData: T[] = []
 ): DBResponseDTO<T> => ({
-  data: [] as T[],
+  data: mockData,
   error: undefined,
   ...overrides
 })
@@ -158,4 +158,5 @@ export const sampleSingleLLMResponseDTO = makeSingleLLMResponseDTO()
 export const sampleSingleEmbeddingRequestDTO = makeSingleEmbeddingRequestDTO()
 export const sampleSingleEmbeddingResponseDTO = makeSingleEmbeddingResponseDTO()
 export const sampleDBQueryDTO = makeDBQueryDTO()
+export const sampleDBResponseDTO = makeDBResponseDTO()
 

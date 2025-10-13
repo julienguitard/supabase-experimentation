@@ -1,0 +1,302 @@
+{
+  "info": {
+    "name": "Supabase Edge Functions API",
+    "description": "Collection for testing Supabase Edge Functions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "1"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{SUPABASE_JWT_TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:54321/functions/v1",
+      "type": "string"
+    },
+    {
+      "key": "SUPABASE_JWT_TOKEN",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Database Operations",
+      "item": [
+        {
+          "name": "Select Table",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/select-table?table=links",
+              "host": ["{{BASE_URL}}"],
+              "path": ["select-table"],
+              "query": [
+                {
+                  "key": "table",
+                  "value": "links",
+                  "description": "Table name to query"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Select Row",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/select-row?table=links&id=123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{BASE_URL}}"],
+              "path": ["select-row"],
+              "query": [
+                {
+                  "key": "table",
+                  "value": "links"
+                },
+                {
+                  "key": "id",
+                  "value": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Link Management",
+      "item": [
+        {
+          "name": "Insert Links",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"url\": \"https://example.com/article\",\n    \"category\": \"technology\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/insert-links",
+              "host": ["{{BASE_URL}}"],
+              "path": ["insert-links"]
+            }
+          }
+        },
+        {
+          "name": "Update Links",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"link_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"url\": \"https://example.com/updated-article\",\n    \"category\": \"technology\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/update-links",
+              "host": ["{{BASE_URL}}"],
+              "path": ["update-links"]
+            }
+          }
+        },
+        {
+          "name": "Delete Links",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"link_id\": \"123e4567-e89b-12d3-a456-426614174000\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/delete-links",
+              "host": ["{{BASE_URL}}"],
+              "path": ["delete-links"]
+            }
+          }
+        },
+        {
+          "name": "Fetch Links",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/fetch-links",
+              "host": ["{{BASE_URL}}"],
+              "path": ["fetch-links"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content Processing",
+      "item": [
+        {
+          "name": "Summarize Links",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/summarize-links",
+              "host": ["{{BASE_URL}}"],
+              "path": ["summarize-links"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fragment Management",
+      "item": [
+        {
+          "name": "Check Fragments",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/check-fragments",
+              "host": ["{{BASE_URL}}"],
+              "path": ["check-fragments"]
+            }
+          }
+        },
+        {
+          "name": "Chunk Fragments",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/chunk-fragments",
+              "host": ["{{BASE_URL}}"],
+              "path": ["chunk-fragments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vectorization",
+      "item": [
+        {
+          "name": "Vectorize Chunks",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/vectorize-chunks",
+              "host": ["{{BASE_URL}}"],
+              "path": ["vectorize-chunks"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Question Management",
+      "item": [
+        {
+          "name": "Insert Questions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"question\": \"What is artificial intelligence?\",\n    \"category\": \"AI\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/insert-questions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["insert-questions"]
+            }
+          }
+        },
+        {
+          "name": "Update Questions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"question_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"question\": \"What is machine learning?\",\n    \"category\": \"AI\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/update-questions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["update-questions"]
+            }
+          }
+        },
+        {
+          "name": "Delete Questions",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"question_id\": \"123e4567-e89b-12d3-a456-426614174000\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/delete-questions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["delete-questions"]
+            }
+          }
+        },
+        {
+          "name": "Answer Questions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/answer-questions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["answer-questions"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
