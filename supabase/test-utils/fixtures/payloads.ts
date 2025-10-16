@@ -10,25 +10,25 @@ import type {
 
 // Link payload
 export const makeLinkPayload = (overrides: Partial<LinkPayload> = {}): LinkPayload => ({
-  link_id: 'test-link-id',
+  link_id: '123',
   ...overrides
 })
 
 // Content payload
 export const makeContentPayload = (overrides: Partial<ContentPayload> = {}): ContentPayload => ({
-  content_id: 'test-content-id',
+  content_id: '123',
   ...overrides
 })
 
 // Match payload
 export const makeMatchPayload = (overrides: Partial<MatchPayload> = {}): MatchPayload => ({
-  match_id: 'test-match-id',
+  match_id: '123',
   ...overrides
 })
 
 // Fragment payload
 export const makeFragmentPayload = (overrides: Partial<FragmentPayload> = {}): FragmentPayload => ({
-  fragment_id: 'test-fragment-id',
+  fragment_id: '123',
   ...overrides
 })
 
@@ -36,19 +36,19 @@ export const makeFragmentPayload = (overrides: Partial<FragmentPayload> = {}): F
 export const makeModifiedQuestionPayload = (
   overrides: Partial<ModifiedQuestionPayload> = {}
 ): ModifiedQuestionPayload => ({
-  modified_question_id: 'test-modified-question-id',
+  modified_question_id: '123',
   ...overrides
 })
 
 // Answer payload
 export const makeAnswerPayload = (overrides: Partial<AnswerPayload> = {}): AnswerPayload => ({
-  answer_id: 'test-answer-id',
+  answer_id: '123',
   ...overrides
 })
 
 // Chunk payload
 export const makeChunkPayload = (overrides: Partial<ChunkPayload> = {}): ChunkPayload => ({
-  chunk_id: 'test-chunk-id',
+  chunk_id: '123',
   ...overrides
 })
 

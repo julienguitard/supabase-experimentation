@@ -122,7 +122,7 @@ export const makeSingleEmbeddingRequestDTO = (
 export const makeSingleEmbeddingResponseDTO = (
   overrides: Partial<SingleEmbeddingResponseDTO> = {}
 ): SingleEmbeddingResponseDTO => ({
-  embeddings: [0.01, 0.02, 0.03],
+  embeddings:  Array(1536).fill(0).map(() => Math.random() * 2 - 1),
   ...overrides
 })
 
@@ -130,10 +130,10 @@ export const makeSingleEmbeddingResponseDTO = (
 export const makeDBQueryDTO = (overrides: Partial<DBQueryDTO> = {}): DBQueryDTO => ({
   statement: 'select',
   table: 'example_table',
-  id: undefined,
-  cacheTable: undefined,
-  rows: undefined,
-  SQLFunction: undefined,
+  id: '123',
+  cacheTable: 'example_cache_buffer',
+  rows: [{id: '123', name: 'test'},{id: '456', name: 'test2'}],
+  SQLFunction: 'insert_into_example_table',
   ...overrides
 })
 
@@ -158,5 +158,5 @@ export const sampleSingleLLMResponseDTO = makeSingleLLMResponseDTO()
 export const sampleSingleEmbeddingRequestDTO = makeSingleEmbeddingRequestDTO()
 export const sampleSingleEmbeddingResponseDTO = makeSingleEmbeddingResponseDTO()
 export const sampleDBQueryDTO = makeDBQueryDTO()
-export const sampleDBResponseDTO = makeDBResponseDTO()
+export const sampleDBResponseDTO = makeDBResponseDTO<{id: string, name: string}>({data: [{id: '123', name: 'test'},{id: '456', name: 'test2'}]})
 

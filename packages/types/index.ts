@@ -15,7 +15,7 @@ export type SingleOrArray<T> = T | T[];
 
 export type Env = {
     get(key: string): Option<string>;
-    // ...other methods like set, delete, toObjec;t, etc.
+    // ...other methods like set, delete, toObject, etc.
   }
 
 export type BrowserlessClient = {
