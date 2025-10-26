@@ -1,6 +1,8 @@
-drop view if exists matches_with_question_chunks_select_buffer cascade;
+dedrop view if exists matches_with_question_chunks_select_buffer cascade;
 
-create view matches_with_question_chunks_select_buffer as (
+create view matches_with_question_chunks_select_buffer 
+with (security_invoker = on) 
+as (
   select
     match_id,
     (array_agg(hex_question)) [1] as hex_question,
@@ -68,7 +70,9 @@ create view matches_with_question_chunks_select_buffer as (
 
 drop view if exists modified_questions_with_chunks_select_buffer cascade;
 
-create  view modified_questions_with_chunks_select_buffer as (
+create  view modified_questions_with_chunks_select_buffer 
+with (security_invoker = on) 
+as (
   select
     id,
     (array_agg(hex_modified_question)) [1] as hex_modified_question,

@@ -37,7 +37,7 @@ export const makeMockOpenAIClient = (): OpenAI => ({
         {
           object: 'embedding',
           index: 0,
-          embedding: Array(1536).fill(0).map(() => Math.random() * 2 - 1)
+          embedding: Array(1536).fill(0).map((i) => 0.5 * (-1) ** i )
         }
       ],
       model: params.model || 'text-embedding-3-small',

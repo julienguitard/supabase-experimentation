@@ -122,7 +122,7 @@ export const makeSingleEmbeddingRequestDTO = (
 export const makeSingleEmbeddingResponseDTO = (
   overrides: Partial<SingleEmbeddingResponseDTO> = {}
 ): SingleEmbeddingResponseDTO => ({
-  embeddings:  Array(1536).fill(0).map(() => Math.random() * 2 - 1),
+  embeddings:  Array(1536).fill(0).map((i) => 0.5 * (-1) ** i ),
   ...overrides
 })
 
